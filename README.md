@@ -2,7 +2,7 @@
 
 [![Python Template for IDS706](https://github.com/Kedar-V/IDS-706-DataEngineering/actions/workflows/main.yml/badge.svg)](https://github.com/Kedar-V/IDS-706-DataEngineering/actions/workflows/main.yml)
 
-# IDS 706 Hello World Project
+# Hello Python
 
 This repository contains Python functions demonstrating basic greetings, addition, and a self-introduction. The code is structured for learning purposes in the **Data Engineering Systems (IDS 706)** course.
 
