@@ -4,8 +4,7 @@
 
 # Hello Python
 
-This repository contains Python functions demonstrating basic greetings, addition, and a self-introduction. The code is structured for learning purposes in the **Data Engineering Systems (IDS 706)** course.
-
+This repository contains Python functions demonstrating basic greetings, addition, and a self-introduction. 
 ---
 
 ## Files
