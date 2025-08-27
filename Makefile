@@ -6,7 +6,7 @@ format:
 	black *.py
 
 lint:
-	flake8 --ignore=C,N hello.py
+	flake8 hello.py
 
 test:
 	python -m pytest -vv --cov=hello test_hello.py
