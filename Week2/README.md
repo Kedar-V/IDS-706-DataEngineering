@@ -340,7 +340,7 @@ Continued experimentation with these techniques will help extend the model's app
 ## Detailed Results and Visualizations
 
 For detailed results, visualizations, and model evaluation, please refer to the notebook:  
-[Bitcoin_DataAnalysis.ipynb](./Bitcoin_DataAnalysis.ipynb)
+[Bitcoin_DataAnalysis.ipynb](./Bitcoin_DataAnalysis_Notebook.ipynb)
 
 The notebook includes:
 - Benchmark comparisons for Pandas, Polars, and PySpark
