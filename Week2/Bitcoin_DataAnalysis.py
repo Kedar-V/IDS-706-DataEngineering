@@ -451,9 +451,34 @@ class CryptoFeatureEngineer:
             (pl.concat_list([pl.col("Close"), pl.col("Open")]).min().over("Close") - pl.col("Low")).alias("candle_lower_shadow")
         ])
         return self
+    
+    # ------------------------
+    # 2. Features aggregation using groupby
+    # ------------------------
+    def aggregated_features(self, group_col="Year"):
+        """
+        Adds groupby aggregated features (mean, std, min, max) for Close price by group_col.
+        Example: group by year and compute mean Close price.
+        """
+        # Ensure group_col exists, e.g., create Year from Timestamp
+        if group_col == "Year" and "Year" not in self.df.columns:
+            self.df = self.df.with_columns(
+                ((pl.col("Timestamp") / 31556952 + 1970).cast(pl.Int64)).alias("Year")
+            )
+        # Group by and aggregate
+        agg_df = self.df.groupby(group_col).agg([
+            pl.col("Close").mean().alias(f"{group_col}_Close_mean"),
+            pl.col("Close").std().alias(f"{group_col}_Close_std"),
+            pl.col("Close").min().alias(f"{group_col}_Close_min"),
+            pl.col("Close").max().alias(f"{group_col}_Close_max"),
+        ])
+        # Join back to main df
+        self.df = self.df.join(agg_df, on=group_col, how="left")
+        return self
+
 
     # ------------------------
-    # 2. Lag features
+    # 3. Lag features
     # ------------------------
     def lag_features(self, lags=[1,2,3,5,10]):
         """
@@ -472,7 +497,7 @@ class CryptoFeatureEngineer:
         return self
 
     # ------------------------
-    # 3. Rolling / moving window features
+    # 4. Rolling / moving window features
     # ------------------------
     def rolling_features(self):
         """
@@ -499,7 +524,7 @@ class CryptoFeatureEngineer:
         return self
 
     # ------------------------
-    # 4. Relative Strength Index (RSI)
+    # 5. Relative Strength Index (RSI)
     # ------------------------
     def rsi(self, window=14):
         """
@@ -537,7 +562,7 @@ class CryptoFeatureEngineer:
         return self
 
     # ------------------------
-    # 5. MACD (Moving Average Convergence Divergence)
+    # 6. MACD (Moving Average Convergence Divergence)
     # ------------------------
     def macd(self):
         """
@@ -556,7 +581,7 @@ class CryptoFeatureEngineer:
         return self
 
     # ------------------------
-    # 6. Bollinger Bands
+    # 7. Bollinger Bands
     # ------------------------
     def bollinger_bands(self, window=20):
         """
@@ -577,7 +602,7 @@ class CryptoFeatureEngineer:
         return self
 
     # ------------------------
-    # 7. Get final dataframe
+    # 8. Get final dataframe
     # ------------------------
     def get_df(self):
         """
