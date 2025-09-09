@@ -1,0 +1,6 @@
+polars
+pandas
+matplotlib
+mplfinance
+seaborn
+scikit-learn
