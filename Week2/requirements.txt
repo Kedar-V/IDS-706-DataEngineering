@@ -4,3 +4,4 @@ matplotlib
 mplfinance
 seaborn
 scikit-learn
+flake8==7.3.0
