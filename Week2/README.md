@@ -302,8 +302,6 @@ evaluator.plot_residuals_over_time()
 
 ---
 ## Results
-### HIGHLIGHT
-
 The following plots summarize the model's performance on the test set:
 
 **1. Predicted vs Actual Close Price**  
