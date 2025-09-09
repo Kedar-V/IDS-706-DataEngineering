@@ -457,20 +457,34 @@ class CryptoFeatureEngineer:
     # ------------------------
     def aggregated_features(self, group_col="Year"):
         """
-        Adds groupby aggregated features (mean, std, min, max) for Close price by group_col.
-        Example: group by year and compute mean Close price.
+        Adds groupby aggregated features (mean, std, min, max) for Close and Open price by group_col.
+        Supports 'Year', 'Month', 'Day' as group_col.
         """
-        # Ensure group_col exists, e.g., create Year from Timestamp
+        # Ensure group_col exists
         if group_col == "Year" and "Year" not in self.df.columns:
             self.df = self.df.with_columns(
                 ((pl.col("Timestamp") / 31556952 + 1970).cast(pl.Int64)).alias("Year")
             )
+        elif group_col == "Month" and "Month" not in self.df.columns:
+            # 2629746 = seconds in a month (approx, not exact for all months)
+            self.df = self.df.with_columns(
+                ((pl.col("Timestamp") / 2629746 + 1970 * 12).cast(pl.Int64)).alias("Month")
+            )
+        elif group_col == "Day" and "Day" not in self.df.columns:
+            # 86400 = seconds in a day
+            self.df = self.df.with_columns(
+                ((pl.col("Timestamp") / 86400 + 1970 * 365).cast(pl.Int64)).alias("Day")
+            )
         # Group by and aggregate
-        agg_df = self.df.groupby(group_col).agg([
+        agg_df = self.df.group_by(group_col).agg([
             pl.col("Close").mean().alias(f"{group_col}_Close_mean"),
             pl.col("Close").std().alias(f"{group_col}_Close_std"),
             pl.col("Close").min().alias(f"{group_col}_Close_min"),
             pl.col("Close").max().alias(f"{group_col}_Close_max"),
+            pl.col("Open").mean().alias(f"{group_col}_Open_mean"),
+            pl.col("Open").std().alias(f"{group_col}_Open_std"),
+            pl.col("Open").min().alias(f"{group_col}_Open_min"),
+            pl.col("Open").max().alias(f"{group_col}_Open_max"),
         ])
         # Join back to main df
         self.df = self.df.join(agg_df, on=group_col, how="left")
@@ -1039,16 +1053,16 @@ if __name__ == "__main__":
     fe = CryptoFeatureEngineer(df)
     df_feat = (
         fe.basic_features()
-            .lag_features()
-            .rolling_features()
-            .rsi()
-            .macd()
-            .bollinger_bands()
-            .get_df()
+        .aggregated_features(group_col="Day")
+        .lag_features()
+        .rolling_features()
+        .rsi()
+        .macd()
+        .bollinger_bands()
+        .get_df()
     )
 
     df_feat.tail(10).to_pandas()
-
 
     # ---------------  
     # PREPARE ML DATASET
