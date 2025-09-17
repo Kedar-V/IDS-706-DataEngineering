@@ -84,6 +84,19 @@ This project can also be run using a **Docker container** without relying on VS 
     docker exec -it python_week3 /bin/bash
     ```
 
+5. Alternative: Using Docker Compose
+
+    You can also use docker-compose for easier management:
+    ```bash
+    docker-compose up -d
+    ```
+    - This builds and starts the container in detached mode.
+
+    Access the container with:
+
+    ```bash
+    docker compose exec python /bin/bash
+    ```
 
 # Bitcoin Data Analysis Testing
 
