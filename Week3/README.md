@@ -113,41 +113,28 @@ The tests use reusable fixtures:
 - **dummy_model_df**: Polars DataFrame including timestamp for residual-over-time tests.
 
 ---
+## Test Overview
 
-## Test Categories
-
-### 1. DataFrameLoader Tests
-
-- `test_load_pandas`: Load CSV as Pandas DataFrame.
-- `test_load_polars`: Load CSV as Polars DataFrame.
-- `test_invalid_library`: Raise error for unsupported library.
-
-### 2. CryptoFeatureEngineer Tests
-
-- `test_basic_features`: Compute return, spreads, and candle features.
-- `test_lag_features`: Generate lagged features.
-- `test_rsi_macd_bollinger`: Compute technical indicators (RSI, MACD, Bollinger Bands).
-
-### 3. CryptoDatasetLoader Tests
-
-- `test_create_target`: Verify next-period Close as target.
-- `test_filter_nulls`: Drop rows with null values.
-- `test_subset`: Keep last N rows.
-- `test_scaling`: Normalize features and target to mean 0, std 1.
-- `test_pca`: Apply PCA and retain ≥95% variance.
-
-### 4. ModelEvaluator Tests
-
-- `test_predict_and_residuals`: Verify predictions and residuals.
-- `test_compute_metrics`: Validate RMSE and R² for perfect fit.
-- `test_feature_importance_plot`: Plot feature importances.
-- `test_residual_plots`: Plot residuals without exceptions.
-- `test_residuals_over_time`: Plot residuals over time with timestamp.
-- `test_residuals_over_time_missing_timestamp`: Handle missing timestamp gracefully.
-
-### 5. System Tests
-
-- `test_full_pipeline_system`: End-to-end test for full data loading, feature engineering, dataset preparation, model training, and evaluation.
+| Category | Test Function | Description |
+|----------|---------------|-------------|
+| **DataFrameLoader Tests** | `test_load_pandas` | Load CSV as Pandas DataFrame. |
+|  | `test_load_polars` | Load CSV as Polars DataFrame. |
+|  | `test_invalid_library` | Raise error for unsupported library. |
+| **CryptoFeatureEngineer Tests** | `test_basic_features` | Compute return, spreads, and candle features. |
+|  | `test_lag_features` | Generate lagged features. |
+|  | `test_rsi_macd_bollinger` | Compute technical indicators (RSI, MACD, Bollinger Bands). |
+| **CryptoDatasetLoader Tests** | `test_create_target` | Verify next-period Close as target. |
+|  | `test_filter_nulls` | Drop rows with null values. |
+|  | `test_subset` | Keep last N rows. |
+|  | `test_scaling` | Normalize features and target to mean 0, std 1. |
+|  | `test_pca` | Apply PCA and retain ≥95% variance. |
+| **ModelEvaluator Tests** | `test_predict_and_residuals` | Verify predictions and residuals. |
+|  | `test_compute_metrics` | Validate RMSE and R² for perfect fit. |
+|  | `test_feature_importance_plot` | Plot feature importances. |
+|  | `test_residual_plots` | Plot residuals without exceptions. |
+|  | `test_residuals_over_time` | Plot residuals over time with timestamp. |
+|  | `test_residuals_over_time_missing_timestamp` | Handle missing timestamp gracefully. |
+| **System Tests** | `test_full_pipeline_system` | End-to-end test for full data loading, feature engineering, dataset preparation, model training, and evaluation. |
 
 ---
 
