@@ -1,7 +1,5 @@
 # IDS-706-DataEngineering-Week3
-# Project Structure
-
-## Index
+# Index
 
 - [Project Structure](#project-structure)
 - [Environment Setup](#environment-setup)
@@ -16,7 +14,7 @@
   - [2. Using Makefile](#2-using-makefile)
 
 ---
-
+# Project Structure
 ```
 ├── .devcontainer
 ├── Week1/
