@@ -150,19 +150,20 @@ pytest -vv --cov=Bitcoin_DataAnalysis test_BitcoinDataAnalysis.py
 
 ### 2. Using Makefile:
 
-Add the following to your `Makefile`:
+The Makefile includes convenient targets for installing dependencies, running tests, formatting code, and more.
 
-```makefile
-install:
-    pip install -r Week3/requirements.txt
+### 2. Using the Makefile
 
-test:
-    pytest -vv --cov=Bitcoin_DataAnalysis Week3/test_BitcoinDataAnalysis.py
-```
+The Makefile provides convenient targets to install dependencies, run tests, format code, and more.
 
-Then run:
+1. Install dependencies:
 
-```bash
-make install
-make test
-```
+    ```bash
+    make install
+    ```
+
+2. Run the tests with coverage:
+
+    ```bash
+    make test
+    ```
