@@ -5,4 +5,5 @@ mplfinance
 seaborn
 scikit-learn
 pytest
+pytest-cov
 pyspark

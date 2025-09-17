@@ -14,7 +14,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 
 # Start spark session
-spark = SparkSession.builder.appName("Bitcoin_DataAnalysis").getOrCreate()
+if __name__ == "__main__":
+    spark = SparkSession.builder.appName("Bitcoin_DataAnalysis").getOrCreate()
 
 # ---------------
 # DATASET LOADER
