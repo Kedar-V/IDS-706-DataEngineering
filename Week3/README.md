@@ -1,6 +1,22 @@
 # IDS-706-DataEngineering-Week3
 # Project Structure
 
+## Index
+
+- [Project Structure](#project-structure)
+- [Environment Setup](#environment-setup)
+  - [Dev Container (VS Code)](#dev-container-vs-code)
+  - [Docker Container](#docker-container)
+- [Bitcoin Data Analysis Testing](#bitcoin-data-analysis-testing)
+  - [Key Python Modules](#key-python-modules)
+  - [Pytest Fixtures](#pytest-fixtures)
+  - [Test Overview](#test-overview)
+- [How to Run Tests](#how-to-run-tests)
+  - [1. Using Python directly](#1-using-python-directly)
+  - [2. Using Makefile](#2-using-makefile)
+
+---
+
 ```
 ├── .devcontainer
 ├── Week1/
