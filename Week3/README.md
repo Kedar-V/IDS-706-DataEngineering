@@ -1,8 +1,6 @@
 # IDS-706-DataEngineering-Week3
 # Index
 
-# Index
-
 - [Project Structure](#project-structure)
 - [Environment Setup](#environment-setup)
   - [Dev Container (VS Code)](#dev-container-vs-code)
