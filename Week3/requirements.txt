@@ -6,5 +6,7 @@ seaborn
 scikit-learn
 pytest
 pytest-cov
-pyspark
 pyarrow
+
+# Optional dependencies
+# pyspark

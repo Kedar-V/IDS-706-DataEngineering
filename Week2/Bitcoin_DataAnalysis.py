@@ -1,7 +1,5 @@
 import pandas as pd
 import polars as pl
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, from_unixtime, year, mean as Fmean
 import matplotlib.pyplot as plt
 import time
 import seaborn as sns
@@ -15,6 +13,8 @@ from sklearn.metrics import mean_squared_error, r2_score
 
 # Start spark session
 if __name__ == "__main__":
+    from pyspark.sql import SparkSession
+    from pyspark.sql.functions import col, from_unixtime, year, mean as Fmean
     spark = SparkSession.builder.appName("Bitcoin_DataAnalysis").getOrCreate()
 
 # ---------------
