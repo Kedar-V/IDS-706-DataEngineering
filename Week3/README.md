@@ -1,3 +1,26 @@
+# Project Structure
+
+```
+├── .devcontainer
+├── Week1/
+├── Week2/
+│   └── Bitcoin_DataAnalysis.py
+├── Week3/
+│   ├── test_BitcoinDataAnalysis.py
+│   └── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
+```
+
+
+- **Week2/Bitcoin_DataAnalysis.py**: Contains the main classes for data loading, feature engineering, dataset preparation, and model evaluation.
+- **Week3/test_BitcoinDataAnalysis.py**: Contains unit tests and system tests.
+- **requirements.txt**: Python dependencies for Week3.
+- **Dockerfile / docker-compose.yml**: Optional containerized environment for reproducible testing.
+
+---
+
 # Environment Setup
 
 ## Dev Container (VS Code)
@@ -65,29 +88,6 @@ This project can also be run using a **Docker container** without relying on VS 
 # Bitcoin Data Analysis Testing
 
 This repository contains Python modules and tests for Bitcoin data analysis, feature engineering, dataset preparation, and model evaluation. The tests use **pytest**, **pandas**, **polars**, **numpy**, and **scikit-learn**.
-
----
-
-## Project Structure
-
-```
-├── .devcontainer
-├── Week1/
-├── Week2/
-│   └── Bitcoin_DataAnalysis.py
-├── Week3/
-│   ├── test_BitcoinDataAnalysis.py
-│   └── requirements.txt
-├── Dockerfile
-├── docker-compose.yml
-└── README.md
-```
-
-
-- **Week2/Bitcoin_DataAnalysis.py**: Contains the main classes for data loading, feature engineering, dataset preparation, and model evaluation.
-- **Week3/test_BitcoinDataAnalysis.py**: Contains unit tests and system tests.
-- **requirements.txt**: Python dependencies for Week3.
-- **Dockerfile / docker-compose.yml**: Optional containerized environment for reproducible testing.
 
 ---
 
