@@ -19,6 +19,7 @@
 - **Week3/test_BitcoinDataAnalysis.py**: Contains unit tests and system tests.
 - **requirements.txt**: Python dependencies for Week3.
 - **Dockerfile / docker-compose.yml**: Optional containerized environment for reproducible testing.
+- **.devcontainer/**: Contains VS Code Dev Container configuration for a reproducible development environment.
 
 ---
 
