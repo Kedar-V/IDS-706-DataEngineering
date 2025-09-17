@@ -7,3 +7,4 @@ scikit-learn
 pytest
 pytest-cov
 pyspark
+pyarrow

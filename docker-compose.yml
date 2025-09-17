@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  python:
+    build: .
+    environment:
+      - PYTHONPATH=/app
+    container_name: python_week3
+    volumes:
+      - .:/app
+    tty: true

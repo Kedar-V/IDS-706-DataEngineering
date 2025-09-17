@@ -18,18 +18,15 @@ from Week2.Bitcoin_DataAnalysis import (
 # -----------------------------
 @pytest.fixture
 def sample_csv():
-    """Create a temporary CSV file with simple OHLCV data for DataFrameLoader tests."""
-    data = """  Timestamp,Open,High,Low,Close,Volume
-                1,100,105,95,102,10
-                2,102,107,97,104,20
-                3,104,109,99,106,30
-         """
+    """Create temporary CSV with enough rows for system test."""
+    data = "Timestamp,Open,High,Low,Close,Volume\n"
+    for i in range(1, 21):
+        data += f"{i},{100+i},{105+i},{95+i},{102+i},{10*i}\n"
     tmp = NamedTemporaryFile(delete=False, suffix=".csv")
     tmp.write(data.encode("utf-8"))
     tmp.close()
     yield tmp.name
-    os.remove(tmp.name)  # Cleanup after test
-
+    os.remove(tmp.name)
 
 @pytest.fixture
 def ohlcv_df():
@@ -92,7 +89,7 @@ class TestDataFrameLoader:
         assert isinstance(df, pd.DataFrame)
         assert "Timestamp" in df.columns
         assert df["Timestamp"].dtype == "int64"
-        assert df.loc[0, "Open"] == 100
+        assert df.loc[0, "Open"] == 101
 
     def test_load_polars(self, sample_csv):
         """Test loading CSV into a Polars DataFrame."""
@@ -102,7 +99,7 @@ class TestDataFrameLoader:
         assert isinstance(df, pl.DataFrame)
         assert "Timestamp" in df.columns
         assert df["Timestamp"].dtype == pl.Int64
-        assert df["Open"][0] == 100
+        assert df["Open"][0] == 101
 
     def test_invalid_library(self, sample_csv):
         """Test that an unsupported library raises ValueError."""
@@ -242,3 +239,28 @@ class TestModelEvaluator:
         X, y, model = dummy_model_data
         evaluator = ModelEvaluator(model, X, y, df=None, timestamp_col="Timestamp")
         evaluator.plot_residuals_over_time()
+
+class TestSystem:
+    def test_full_pipeline_system(self, sample_csv):
+        # Load data
+        df = DataFrameLoader(sample_csv).load("polars")
+
+        # Feature engineering
+        fe = CryptoFeatureEngineer(df).basic_features().lag_features().rolling_features()
+        df_fe = fe.get_df()
+
+        # Dataset loader
+        loader = CryptoDatasetLoader(df_fe, test_size=0.3).create_target()
+        X, y = loader.get_features_targets()
+        X_train, X_test, y_train, y_test = loader.train_test_split()
+
+        # Train a simple model
+        model = LinearRegression().fit(X_train, y_train)
+
+        # Evaluate
+        evaluator = ModelEvaluator(model, X_test, y_test, df=df_fe)
+        rmse, r2 = evaluator.compute_metrics()
+
+        # Simple assertions
+        assert rmse >= 0
+        assert -1 <= r2 <= 1
