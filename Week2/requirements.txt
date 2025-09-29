@@ -5,5 +5,5 @@ mplfinance
 seaborn
 scikit-learn
 pytest
-pyspark
-pyarrow
+#pyspark
+#pyarrow

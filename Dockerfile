@@ -1,29 +1,35 @@
-# Base image: Python 3.12 slim
 FROM python:3.12-slim-bullseye
 
-# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
-# Set work directory
 WORKDIR /app
 
-# Install system dependencies
+# Install dependencies including cron
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
     curl \
+    cron \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only Week3 requirements
-COPY Week3/requirements.txt ./Week3/requirements.txt
+# Copy requirements
+COPY Week4/requirements.txt ./Week4/requirements.txt
 
-# Install Week3 dependencies
+# Install Python packages
 RUN pip install --upgrade pip \
-    && pip install -r Week3/requirements.txt
+    && pip install -r Week4/requirements.txt
 
-# Copy full workspace
+# Copy the app code
 COPY . /app
 
-# Default command
-CMD ["bash"]
+# Add the daily cron job (midnight)
+RUN echo "0 0 * * * python3 /app/bitcoin_price_update.py >> /var/log/bitcoin_price_update.log 2>&1" > /etc/cron.d/bitcoin_cron \
+    && chmod 0644 /etc/cron.d/bitcoin_cron \
+    && crontab /etc/cron.d/bitcoin_cron
+
+# Create log file
+RUN touch /var/log/bitcoin_price_update.log
+
+# Start cron in foreground
+CMD ["cron", "-f"]
