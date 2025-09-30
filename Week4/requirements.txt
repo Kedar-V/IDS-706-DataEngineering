@@ -11,5 +11,4 @@ beautifulsoup4
 requests
 yfinance
 streamlit
-# pyspark
-# pyarrow
+openai

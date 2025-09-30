@@ -1,26 +1,21 @@
 {
-    "name": "Python 3.12 Data Analysis",  // Name of the Dev Container
-    "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bullseye",  // Base image
-
-    // Workspace folder inside the container
-    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-
-    // Commands to run after container creation
+    "name": "Bitcoin Data Engineering Dev Container",
+    "dockerComposeFile": ["../docker-compose.yml"],
+    "service": "python", // Main service name from docker-compose.yml
+    "workspaceFolder": "/app", // Matches the volume mount in compose
     "postCreateCommand": "pip install --upgrade pip && pip install -r Week3/requirements.txt",
-
-    // VS Code customizations (extensions and settings)
     "customizations": {
         "vscode": {
             "extensions": [
-                "ms-python.python",         // Python language support
-                "ms-python.vscode-pylance", // Fast static type checking
-                "ms-python.black-formatter" // Code formatter
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-python.black-formatter"
             ],
             "settings": {
-                "python.pythonPath": "/usr/local/bin/python", // Container Python path
-                "python.linting.enabled": true,              // Enable linting
-                "python.linting.pylintEnabled": true,        // Use pylint
-                "python.formatting.provider": "black"        // Use Black
+                "python.pythonPath": "/usr/local/bin/python",
+                "python.linting.enabled": true,
+                "python.linting.pylintEnabled": true,
+                "python.formatting.provider": "black"
             }
         }
     }

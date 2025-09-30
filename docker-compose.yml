@@ -1,11 +1,43 @@
-version: "3.9"  # Docker Compose file version
+version: "3.9"
 
 services:
-  python:  # Service name
-    build: .  # Build the Docker image using the Dockerfile in the current directory
+  python:  
+    build: .
     environment:
-      - PYTHONPATH=/app  # Set PYTHONPATH so Python can find your Week2/Week3 modules
-    container_name: python_week3  # Assign a custom name to the container
+      - PYTHONPATH=/app
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=example
+      - MYSQL_DATABASE=btc
+      - MY_API_KEY=${OPENAI_API_KEY}
+    container_name: python_week4
     volumes:
-      - .:/app  # Mount the current directory into /app in the container (code changes reflect instantly)
-    tty: true  # Keep the container running with a terminal attached (necessary for interactive sessions)
+      - .:/app
+    tty: true
+    depends_on:
+      - mysql
+    networks:
+      - btc-network
+    ports:
+      - "8501:8501"   # Streamlit port
+
+  mysql:
+    image: mysql:8.0
+    container_name: btc-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: btc
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - btc-network
+
+volumes:
+  mysql_data:
+
+networks:
+  btc-network:
