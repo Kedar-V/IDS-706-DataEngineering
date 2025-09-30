@@ -33,11 +33,19 @@ RUN echo "0 * * * * python3 /app/Week4/app/worker/news_update.py >> /var/log/new
     && chmod 0644 /etc/cron.d/news_cron \
     && crontab /etc/cron.d/news_cron
 
+# Add the monthly cron job for model_update_cron.py
+RUN echo "0 0 1 * * python3 /app/Week4/app/worker/model_update_cron.py >> /var/log/model_update_cron.log 2>&1" > /etc/cron.d/model_update_cron \
+    && chmod 0644 /etc/cron.d/model_update_cron \
+    && crontab /etc/cron.d/model_update_cron
+
 # Create log file
 RUN touch /var/log/bitcoin_price_update.log
 
 # Create log file for news_update.py
 RUN touch /var/log/news_update.log
+
+# Create log file for model_update.py
+RUN touch /var/log/model_update.log
 
 # Start cron in foreground
 CMD ["cron", "-f"]

@@ -1,7 +1,6 @@
 import pandas as pd
 import polars as pl
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, from_unixtime, year, mean as Fmean
+
 import matplotlib.pyplot as plt
 import time
 import seaborn as sns
@@ -13,9 +12,8 @@ from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 
-# Start spark session
-if __name__ == "__main__":
-    spark = SparkSession.builder.appName("Bitcoin_DataAnalysis").getOrCreate()
+import sys
+sys.path.append("../..")
 
 # ---------------
 # DATASET LOADER
@@ -31,7 +29,7 @@ class DataFrameLoader:
     - Provides simple benchmarking of common operations across libraries
     """
 
-    def __init__(self, csv_path):
+    def __init__(self, csv_path=None):
         """
         Initialize the DataFrameLoader.
 
@@ -51,21 +49,24 @@ class DataFrameLoader:
 
     def load(self, library='pandas'):
         """
-        Load the CSV file into the specified library's DataFrame.
+        Load the CSV file or SQL data into the specified library's DataFrame.
 
         Parameters:
         -----------
         library : str
-            Choose 'pandas', 'polars', or 'pyspark'.
+            Choose 'pandas', 'polars', 'pyspark', or 'sql'.
 
         Returns:
         --------
         DataFrame in the chosen library format
         """
         library = library.lower()
-
+        if not self.csv_path and library != 'sql':
+            raise ValueError("CSV path must be provided for non sql loading.")
+        
         if library == 'pandas':
             # Read CSV using pandas
+            
             df = pd.read_csv(self.csv_path)
             # Keep Timestamp column as epoch seconds (int)
             return df
@@ -88,8 +89,31 @@ class DataFrameLoader:
                 df = df.withColumn("Timestamp", col("Timestamp").cast("long"))
             return df
 
+        elif library == 'sql':
+            return self.load_from_sql()
+
         else:
-            raise ValueError("Unsupported library. Choose 'pandas', 'polars', or 'pyspark'.")
+            raise ValueError("Unsupported library. Choose 'pandas', 'polars', 'pyspark', or 'sql'.")
+
+    def load_from_sql(self):
+        sys.path.append("../dao")
+        from btc_dao import BitcoinOHLCDAO  
+        dao = BitcoinOHLCDAO(host='btc-mysql', user='root', password='example')
+        try:
+            rows = dao.fetch_all()
+            columns = ["id", "Timestamp", "Open", "High", "Low", "Close", "Volume"]
+            df = pl.DataFrame(rows, schema=columns).drop("id")
+
+            # Cast decimal columns to float
+            decimal_columns = ["Timestamp", "Open", "High", "Low", "Close", "Volume"]
+            for col in decimal_columns:
+                df = df.with_columns(pl.col(col).cast(pl.Float64))
+
+            return df
+
+        finally:
+            # Ensure the DAO connection is closed
+            dao.close()
 
     def benchmark(self):
         """
@@ -845,8 +869,8 @@ class ModelEvaluator:
         self.df = df
         self.timestamp_col = timestamp_col
         self.feature_names = feature_names
-        self.y_pred = None  # predictions will be stored here
-        self.residuals = None  # residuals = y_test - y_pred
+        self.y_pred = None  
+        self.residuals = None  
 
     # ------------------------
     # 1. Make predictions
@@ -1005,6 +1029,13 @@ class ModelEvaluator:
 
 
 if __name__ == "__main__":
+
+    # from pyspark.sql import SparkSession
+    # from pyspark.sql.functions import col, from_unixtime, year, mean as Fmean
+    # # Start spark session
+    # if __name__ == "__main__":
+    #     spark = SparkSession.builder.appName("Bitcoin_DataAnalysis").getOrCreate()
+
     # ------------------------
     # Dataset Loader and Benchmark
     # ------------------------

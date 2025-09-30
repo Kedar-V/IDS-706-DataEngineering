@@ -5,15 +5,12 @@ from btc_dao import BitcoinOHLCDAO
 
 class BitcoinOHLCModel:
     def __init__(self, host='btc-mysql', user='root', password='example'):
-        self.dao = None
-        if BitcoinOHLCDAO:
-            try:
-                self.dao = BitcoinOHLCDAO(host=host, user=user, password=password)
-            except Exception as e:
-                self.dao = None
-                self.error = str(e)
-        else:
-            self.error = "DAO not available"
+        try:
+            self.dao = BitcoinOHLCDAO(host=host, user=user, password=password)
+        except Exception as e:
+            self.dao = None
+            self.error = str(e)
+            print(self.error)
 
     def fetch_all(self):
         if not self.dao:
