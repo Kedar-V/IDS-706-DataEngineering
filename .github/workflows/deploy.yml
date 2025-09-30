@@ -1,0 +1,36 @@
+name: Deploy to EC2 with Docker Compose
+
+on: [push]
+    
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repository
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      # 2. Install SSH client
+      - name: Install SSH
+        run: sudo apt-get update && sudo apt-get install -y openssh-client
+
+      # 3. Set up SSH key
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.8.1
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      # 4. Copy project files to EC2
+      - name: Copy files to EC2
+        run: |
+          scp -r -o StrictHostKeyChecking=no ./ ubuntu@${{ secrets.EC2_IP }}:/home/ubuntu/app
+
+      # 5. SSH into EC2 and run Docker Compose
+      - name: Deploy with Docker Compose
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_IP }} << 'EOF'
+          cd /home/ubuntu/app
+          docker-compose down
+          docker-compose up -d --build
+          
