@@ -1,4 +1,4 @@
-name: Build & Deploy to EC2 via Docker Hub
+rname: Build & Deploy to EC2 via Docker Hub
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: your-dockerhub-username/bitcoin-app:latest
+          tags: kedarvaidya05/bitcoin-app:latest
 
       # 4. SSH into EC2 and deploy with Docker Compose
       - name: Deploy on EC2
