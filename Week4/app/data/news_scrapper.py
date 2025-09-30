@@ -1,71 +1,82 @@
-import time
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 class NewsScraper:
     def __init__(self):
-        options = webdriver.ChromeOptions()
-        options.add_argument("--headless=new")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-
-        self.driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=options
-        )
+        self.session = requests.Session()
+        self.session.headers.update({
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/114.0.0.0 Safari/537.36"
+            )
+        })
 
     def scrape_articles(self, url):
-        self.driver.get(url)
-        articles = self.driver.find_elements(By.CSS_SELECTOR, "li[data-testid='posts-listing__item']")
+        try:
+            response = self.session.get(url, timeout=10)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            print(f"Failed to fetch {url}: {e}")
+            return []
+
+        soup = BeautifulSoup(response.text, "html.parser")
+        articles = soup.select("a.post-card-inline__figure-link") 
         scraped_data = []
 
-        for article in articles:
-            title = article.find_element(By.CSS_SELECTOR, ".post-card-inline__title").text
-            link = article.find_element(By.CSS_SELECTOR, "a").get_attribute("href")
-            author = article.find_element(By.CSS_SELECTOR, ".post-card-inline__author").text
+        for link_tag in articles:
+            parent = link_tag.find_parent("li")
+            if not parent:
+                continue
+
+            title_tag = parent.select_one(".post-card-inline__title")
+            author_tag = parent.select_one(".post-card-inline__author")
+
+            if not (title_tag and link_tag and author_tag):
+                continue
+
+            title = title_tag.get_text(strip=True)
+            link = urljoin(url, link_tag.get("href"))
+            author = author_tag.get_text(strip=True)
             scraped_data.append({"title": title, "link": link, "author": author})
 
         return scraped_data
-    
+
     def scrape_key_takeaways(self, article_url):
         try:
-            self.driver.get(article_url)
-            time.sleep(2)  # wait for content to load (tune as needed)
-
-            # Look for Key takeaways section
-            header = self.driver.find_elements(By.XPATH, "//h2[contains(text(),'Key takeaways')]")
-            if not header:
-                return []
-
-            # get list items under Key takeaways
-            takeaways = self.driver.find_elements(By.XPATH, "//h2[contains(text(),'Key takeaways')]/following-sibling::ul[1]/li")
-            return [t.text for t in takeaways]
-
-        except Exception as e:
-            print(f"Error scraping {article_url}: {e}")
+            response = self.session.get(article_url, timeout=10)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            print(f"Failed to fetch {article_url}: {e}")
             return []
 
-    def close_driver(self):
-        self.driver.quit()
+        soup = BeautifulSoup(response.text, "html.parser")
+        takeaways_header = soup.find(
+            lambda tag: tag.name == "h2" and "key takeaways" in tag.get_text(strip=True).lower()
+        )
+        if not takeaways_header:
+            return []
+
+        ul_tag = takeaways_header.find_next_sibling("ul")
+        if not ul_tag:
+            return []
+
+        return [li.get_text(strip=True) for li in ul_tag.find_all("li")]
+
 
 if __name__ == "__main__":
-    url = 'https://cointelegraph.com/tags/bitcoin'
+    url = "https://cointelegraph.com/tags/bitcoin"
     scraper = NewsScraper()
     data = {}
-    try:
-        articles = scraper.scrape_articles(url)
-        for article in articles:
-            print(article["title"], article["link"], article["author"])
-            data[article["link"]] = article
 
-        links = data.keys()
-        for link in links:
-            data[link]['takeaways'] = scraper.scrape_key_takeaways(link)
-        print('---------------')
-        print(data)
-    except Exception as e:
-        print(f"Error during scraping: {e}")
-    finally:
-        scraper.close_driver()
+    articles = scraper.scrape_articles(url)
+    for article in articles:
+        print(article["title"], article["link"], article["author"])
+        data[article["link"]] = article
+
+    for link in data.keys():
+        data[link]['takeaways'] = scraper.scrape_key_takeaways(link)
+
+    print("---------------")
+    print(data)

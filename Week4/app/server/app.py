@@ -1,11 +1,12 @@
-
 import sys
 sys.path.append('../assistant')
+sys.path.append('../dao')
 import pandas as pd
 import streamlit as st
 from assistant import NL2SQLAssistant
 from controller import BitcoinOHLCController
 from model import BitcoinOHLCModel
+from news_dao import NewsDAO  # Import NewsDAO
 
 
 st.title("Personal AI Trading Assistant")
@@ -14,6 +15,7 @@ class BitcoinOHLCViewer:
     def __init__(self):
         self.model = BitcoinOHLCModel()
         self.controller = BitcoinOHLCController(self.model)
+        self.news_dao = NewsDAO(host='btc-mysql', user='root', password='example')  
 
     def show_ohlc_table(self):
         import datetime
@@ -65,7 +67,6 @@ class BitcoinOHLCViewer:
                 sql = assistant.convert(prompt)
                 st.code(sql, language="sql")
                 
-                # Execute SQL safely
                 cursor = self.model.dao.conn.cursor()
                 cursor.execute(sql)
                 rows = cursor.fetchall()
@@ -78,15 +79,46 @@ class BitcoinOHLCViewer:
         if results is not None:
             st.dataframe(results)
 
+    def show_news_table(self):
+        st.subheader("Daily News")
+
+        try:
+            rows = self.news_dao.fetch_all()
+            if not rows:
+                st.warning("No news data found in the database.")
+                return
+                        
+            df = pd.DataFrame(rows, columns=["ID", "Title", "Link", "Author", "Published Date", "Key Takeaways"])
+
+            for _, row in df.iterrows():
+                st.markdown(f"### {row['Title']}")
+                st.write(f"**Author:** {row['Author'].strip('by')}")
+                st.write(f"**Published Date:** {row['Published Date']}")
+
+                if row['Key Takeaways']:
+                    st.write("**Key Takeaways:**")
+                    takeaways = row['Key Takeaways']
+                    for takeaway in takeaways:
+                        st.write(f"- {takeaway}")
+
+                st.markdown(f"[Read more]({row['Link']})")
+                st.markdown("---")
+
+        except Exception as e:
+            st.error(f"Error fetching news data: {e}")
+
     def show_menu(self):
-        menu = st.sidebar.radio("Menu", ["Data View", "Ask Assistant"], index=0)
+        menu = st.sidebar.radio("Menu", ["Ask Assistant", " Daily News", "Data View"], index=0)
         if menu == "Data View":
             self.show_ohlc_table()
         elif menu == "Ask Assistant":
             self.show_assistant()
+        elif menu == " Daily News":
+            self.show_news_table()
 
     def close(self):
         self.model.close()
+        self.news_dao.close()  # Close NewsDAO connection
 
 viewer = BitcoinOHLCViewer()
 viewer.show_menu()

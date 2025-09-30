@@ -1,5 +1,8 @@
-from app.data.news_scrapper import NewsScraper
-from app.dao.news_dao import NewsDAO
+import sys
+sys.path.append("../data")
+sys.path.append("../dao")
+from news_scrapper import NewsScraper
+from news_dao import NewsDAO
 from datetime import datetime
 
 class NewsIngestor:
@@ -43,5 +46,4 @@ if __name__ == "__main__":
         for row in rows:
             print(row)
     finally:
-        scraper.close_driver()
         dao.close()
