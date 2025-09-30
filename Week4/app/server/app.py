@@ -7,6 +7,7 @@ from assistant import NL2SQLAssistant
 from controller import BitcoinOHLCController
 from model import BitcoinOHLCModel
 from news_dao import NewsDAO  # Import NewsDAO
+import os  # Added for running external scripts
 
 
 st.title("Personal AI Trading Assistant")
@@ -19,6 +20,15 @@ class BitcoinOHLCViewer:
 
     def show_ohlc_table(self):
         import datetime
+        # Fetch Now button for daily data
+        if st.button("Fetch Daily Data Now"):
+            try:
+                os.system("python3 /app/Week4/app/worker/bitcoin_price_update.py")
+                st.success("Daily data updated successfully!")
+            except Exception as e:
+                st.error(f"Error updating daily data: {e}")
+
+        # Fetch updated data from the database
         df, error = self.controller.get_ohlc_df()
         if error:
             st.error(f"Error: {error}")
@@ -82,12 +92,21 @@ class BitcoinOHLCViewer:
     def show_news_table(self):
         st.subheader("Daily News")
 
+        # Fetch Now button for news data
+        if st.button("Fetch Latest News"):
+            try:
+                os.system("python3 /app/Week4/app/worker/news_update.py")
+                st.success("News data updated successfully!")
+            except Exception as e:
+                st.error(f"Error updating news data: {e}")
+
+        # Fetch updated news data from the database
         try:
             rows = self.news_dao.fetch_all()
             if not rows:
                 st.warning("No news data found in the database.")
                 return
-                        
+
             df = pd.DataFrame(rows, columns=["ID", "Title", "Link", "Author", "Published Date", "Key Takeaways"])
 
             for _, row in df.iterrows():
