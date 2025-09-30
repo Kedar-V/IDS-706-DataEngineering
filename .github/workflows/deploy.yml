@@ -1,36 +1,43 @@
-name: Deploy to EC2 with Docker Compose
+name: Build & Deploy to EC2 via Docker Hub
 
-on: [push]
-    
+on:
+  push:
+    branches:
+      - main
+
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the repository
-      - name: Checkout repo
+      # 1. Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Install SSH client
-      - name: Install SSH
-        run: sudo apt-get update && sudo apt-get install -y openssh-client
-
-      # 3. Set up SSH key
-      - name: Setup SSH key
-        uses: webfactory/ssh-agent@v0.8.1
+      # 2. Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
         with:
-          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 4. Copy project files to EC2
-      - name: Copy files to EC2
-        run: |
-          scp -r -o StrictHostKeyChecking=no ./ ubuntu@${{ secrets.EC2_IP }}:/home/ubuntu/app
+      # 3. Build and push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: your-dockerhub-username/bitcoin-app:latest
 
-      # 5. SSH into EC2 and run Docker Compose
-      - name: Deploy with Docker Compose
-        run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_IP }} << 'EOF'
-          cd /home/ubuntu/app
-          docker-compose down
-          docker-compose up -d --build
-          
+      # 4. SSH into EC2 and deploy with Docker Compose
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/app
+            docker-compose pull
+            docker-compose down
+            docker-compose up -d
