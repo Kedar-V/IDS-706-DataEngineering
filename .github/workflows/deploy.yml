@@ -1,4 +1,4 @@
-rname: Build & Deploy to EC2 via Docker Hub
+name: Build & Deploy to EC2 via Docker Hub
 
 on:
   push:
