@@ -48,6 +48,8 @@ class NL2SQLAssistant:
             max_tokens=150
         )
         sql = response.choices[0].message.content.strip()
+        if sql.startswith("```"):
+            sql = "\n".join(sql.split("\n")[1:-1])
         return sql
 
 

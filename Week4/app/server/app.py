@@ -1,10 +1,12 @@
 
 import sys
 sys.path.append('../assistant')
+import pandas as pd
+import streamlit as st
 from assistant import NL2SQLAssistant
 from controller import BitcoinOHLCController
 from model import BitcoinOHLCModel
-import streamlit as st
+
 
 st.title("Personal AI Trading Assistant")
 
@@ -36,7 +38,25 @@ class BitcoinOHLCViewer:
 
     def show_assistant(self):
         st.subheader("Enter your query in natural language")
-        prompt = st.text_area("")
+
+        # Example prompts dropdown
+        examples = [
+            "Show me all rows where close is above 50000",
+            "Get the top 5 days with highest volume",
+            "Find all rows where open is below 30000",
+            "Calculate the average close price per month",
+            "Show all rows for September 2025"
+        ]
+        
+        example_prompt = st.selectbox("Or pick an example query:", examples)
+        
+        # Text area for user input
+        prompt = st.text_area("Or write your own query:", "")
+
+        # Use example if selected
+        if example_prompt != "--Select--":
+            prompt = example_prompt
+
         sql = None
         results = None
         if st.button("Fetch Data") and prompt:
@@ -44,8 +64,8 @@ class BitcoinOHLCViewer:
                 assistant = NL2SQLAssistant()
                 sql = assistant.convert(prompt)
                 st.code(sql, language="sql")
-                # Execute SQL using DAO
-                import pandas as pd
+                
+                # Execute SQL safely
                 cursor = self.model.dao.conn.cursor()
                 cursor.execute(sql)
                 rows = cursor.fetchall()
@@ -54,6 +74,7 @@ class BitcoinOHLCViewer:
                 cursor.close()
             except Exception as e:
                 st.error(f"Error: {e}")
+
         if results is not None:
             st.dataframe(results)
 
