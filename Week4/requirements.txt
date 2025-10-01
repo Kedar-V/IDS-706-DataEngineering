@@ -11,4 +11,6 @@ beautifulsoup4
 requests
 yfinance
 streamlit
+flake8
+black
 openai

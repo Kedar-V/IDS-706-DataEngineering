@@ -1,9 +1,11 @@
 import sys
+
 sys.path.append("../data")
 sys.path.append("../dao")
 from news_scrapper import NewsScraper
 from news_dao import NewsDAO
 from datetime import datetime
+
 
 class NewsIngestor:
     def __init__(self, scraper: NewsScraper, dao: NewsDAO):
@@ -16,15 +18,17 @@ class NewsIngestor:
             articles = self.scraper.scrape_articles(url)
 
             for article in articles:
-                article['takeaways'] = self.scraper.scrape_key_takeaways(article['link'])
+                article["takeaways"] = self.scraper.scrape_key_takeaways(
+                    article["link"]
+                )
 
             rows = [
                 (
-                    article['title'],
-                    article['link'],
-                    article['author'],
-                    datetime.now(),  
-                    article['takeaways']
+                    article["title"],
+                    article["link"],
+                    article["author"],
+                    datetime.now(),
+                    article["takeaways"],
                 )
                 for article in articles
             ]
@@ -34,10 +38,11 @@ class NewsIngestor:
         except Exception as e:
             print(f"Error during ingestion: {e}")
 
+
 if __name__ == "__main__":
-    url = 'https://cointelegraph.com/tags/bitcoin'
+    url = "https://cointelegraph.com/tags/bitcoin"
     scraper = NewsScraper()
-    dao = NewsDAO(host='btc-mysql', user='root', password='example')
+    dao = NewsDAO(host="btc-mysql", user="root", password="example")
     ingestor = NewsIngestor(scraper, dao)
 
     try:

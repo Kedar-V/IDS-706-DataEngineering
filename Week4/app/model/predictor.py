@@ -1,9 +1,11 @@
 import pickle
 import pandas as pd
 import sys
+
 sys.path.append("../..")
 
 from Week2.Bitcoin_DataAnalysis import CryptoFeatureEngineer, DataFrameLoader
+
 
 class Predictor:
     def __init__(self, model_path: str):
@@ -11,7 +13,7 @@ class Predictor:
         self.model = self.load_model()
 
     def load_model(self):
-        with open(self.model_path, 'rb') as file:
+        with open(self.model_path, "rb") as file:
             model = pickle.load(file)
         return model
 
@@ -27,15 +29,16 @@ class Predictor:
             .bollinger_bands()
             .get_df()
         )
-        processed_data = processed_data.drop('Close')
+        processed_data = processed_data.drop("Close")
         print(self.model.predict(processed_data)[0])
         return self.model.predict(processed_data)[0]
+
 
 if __name__ == "__main__":
 
     # Sample input data
     loader = DataFrameLoader()
-    df = loader.load('sql')
+    df = loader.load("sql")
 
     predictor = Predictor(model_path="random_forest_model.pkl")
     predictions = predictor.predict(df)

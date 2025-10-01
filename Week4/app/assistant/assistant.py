@@ -1,6 +1,7 @@
 import openai
 import os
 
+
 class NL2SQLAssistant:
     def __init__(self, api_key=None, table="bitcoin_daily_price"):
         self.api_key = api_key or os.getenv("MY_API_KEY")
@@ -43,9 +44,9 @@ class NL2SQLAssistant:
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": system_message},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
-            max_tokens=150
+            max_tokens=150,
         )
         sql = response.choices[0].message.content.strip()
         if sql.startswith("```"):

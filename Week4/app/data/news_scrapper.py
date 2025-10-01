@@ -2,16 +2,19 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
+
 class NewsScraper:
     def __init__(self):
         self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/114.0.0.0 Safari/537.36"
-            )
-        })
+        self.session.headers.update(
+            {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/114.0.0.0 Safari/537.36"
+                )
+            }
+        )
 
     def scrape_articles(self, url):
         try:
@@ -22,7 +25,7 @@ class NewsScraper:
             return []
 
         soup = BeautifulSoup(response.text, "html.parser")
-        articles = soup.select("a.post-card-inline__figure-link") 
+        articles = soup.select("a.post-card-inline__figure-link")
         scraped_data = []
 
         for link_tag in articles:
@@ -53,7 +56,8 @@ class NewsScraper:
 
         soup = BeautifulSoup(response.text, "html.parser")
         takeaways_header = soup.find(
-            lambda tag: tag.name == "h2" and "key takeaways" in tag.get_text(strip=True).lower()
+            lambda tag: tag.name == "h2"
+            and "key takeaways" in tag.get_text(strip=True).lower()
         )
         if not takeaways_header:
             return []
@@ -76,7 +80,7 @@ if __name__ == "__main__":
         data[article["link"]] = article
 
     for link in data.keys():
-        data[link]['takeaways'] = scraper.scrape_key_takeaways(link)
+        data[link]["takeaways"] = scraper.scrape_key_takeaways(link)
 
     print("---------------")
     print(data)
