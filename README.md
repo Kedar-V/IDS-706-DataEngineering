@@ -1,3 +1,5 @@
+[![Build & Deploy to EC2 via Docker Hub](https://github.com/Kedar-V/IDS-706-DataEngineering/actions/workflows/deploy.yml/badge.svg)](https://github.com/Kedar-V/IDS-706-DataEngineering/actions/workflows/deploy.yml)
+
 # Personal AI Trading Assistant
 
 [![Demo Website](images/demo1.png)](http://13.231.121.59:8501/)
