@@ -42,7 +42,6 @@ jobs:
       - name: Upload files to EC2
         run: |
           scp -i ${{ secrets.EC2_SSH_KEY }} ./docker-compose.yml ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/app/
-          scp -i ${{ secrets.EC2_SSH_KEY }} -r ./Week4/ ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/app/Week4/
 
       # 6. Pull latest image and restart containers on EC2
       - name: Start containers on EC2
