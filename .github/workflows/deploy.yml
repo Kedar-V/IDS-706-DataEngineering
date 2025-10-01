@@ -58,6 +58,7 @@ jobs:
             else
               echo "Cleaning directory and cloning repo..."
               sudo rm -rf /home/ec2-user/app/*
+              git clone https://github.com/Kedar-V/IDS-706-DataEngineering.git .
             fi
 
       - name: Start containers on EC2
@@ -71,3 +72,13 @@ jobs:
             docker-compose pull
             docker-compose down
             docker-compose up -d
+
+
+      - name: Run startup.sh inside container
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker exec -it python_week4 bash -c "chmod +x /app/startup.sh && /app/startup.sh"
