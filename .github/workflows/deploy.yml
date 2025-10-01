@@ -26,7 +26,7 @@ jobs:
           push: true
           tags: kedarvaidya05/bitcoin-app:latest
 
-      # 4. Deploy on EC2 using base64-encoded PEM
+      # 4. Deploy on EC2
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v0.1.7
         with:
@@ -34,10 +34,24 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-
+            # 1. Create app directory if missing
             mkdir -p /home/ec2-user/app
             chown ec2-user:ec2-user /home/ec2-user/app
-            
+
+      # 5. Copy docker-compose.yml and app code to EC2
+      - name: Upload files to EC2
+        run: |
+          scp -i ${{ secrets.EC2_SSH_KEY }} ./docker-compose.yml ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/app/
+          scp -i ${{ secrets.EC2_SSH_KEY }} -r ./Week4/ ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/app/Week4/
+
+      # 6. Pull latest image and restart containers on EC2
+      - name: Start containers on EC2
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
             cd /home/ec2-user/app
             docker-compose pull
             docker-compose down
