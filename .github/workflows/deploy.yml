@@ -57,7 +57,7 @@ jobs:
               git pull
             else
               echo "Cleaning directory and cloning repo..."
-              rm -rf /home/ec2-user/app/*
+              sudo rm -rf /home/ec2-user/app/*
             fi
 
       - name: Start containers on EC2
