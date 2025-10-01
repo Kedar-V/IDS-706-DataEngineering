@@ -12,12 +12,11 @@ def test_say_hello():
     Test the say_hello function with normal and edge case inputs.
     """
     # Test multiple typical names
-    names = ['Kedar', 'Sam']
+    names = ["Kedar", "Sam"]
     for name in names:
         # Check that the output matches the expected greeting
         assert (
-            say_hello(name)
-            == f"Hello, My name is {name}, and I am excited to join "
+            say_hello(name) == f"Hello, My name is {name}, and I am excited to join "
             "Data Engineering Systems (IDS 706)!"
         )
 

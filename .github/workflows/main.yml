@@ -19,9 +19,8 @@ jobs:
         pip install -r ./Week4/requirements.txt
 
     - name: Lint with flake8
-      run: flake8 ./Week2/Bitcoin_DataAnalysis.py
+      run: flake8 --ignore=C,N,E,W503 .
 
     - name: Run tests
       run: pytest -vv --cov=Bitcoin_DataAnalysis ./Week3/test_BitcoinDataAnalysis.py
-
 

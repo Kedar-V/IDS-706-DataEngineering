@@ -13,7 +13,9 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 
 import sys
+
 sys.path.append("../..")
+
 
 # ---------------
 # DATASET LOADER
@@ -42,12 +44,15 @@ class DataFrameLoader:
 
         # Try to initialize a Spark session for PySpark support
         try:
+            from pyspark.sql import SparkSession
+
+            # from pyspark.sql.functions import col, from_unixtime, year, mean as Fmean
             self.spark = SparkSession.builder.appName("DataFrameLoader").getOrCreate()
         except:
             # If Spark initialization fails, PySpark operations will raise an error
             self.spark = None
 
-    def load(self, library='pandas'):
+    def load(self, library="pandas"):
         """
         Load the CSV file or SQL data into the specified library's DataFrame.
 
@@ -61,26 +66,32 @@ class DataFrameLoader:
         DataFrame in the chosen library format
         """
         library = library.lower()
-        if not self.csv_path and library != 'sql':
+        if not self.csv_path and library != "sql":
             raise ValueError("CSV path must be provided for non sql loading.")
-        
-        if library == 'pandas':
+
+        if library == "pandas":
             # Read CSV using pandas
-            
+
             df = pd.read_csv(self.csv_path)
             # Keep Timestamp column as epoch seconds (int)
             return df
 
-        elif library == 'polars':
+        elif library == "polars":
             # Read CSV using Polars
             df = pl.read_csv(self.csv_path)
             # Ensure Timestamp column is Int64 for consistency
-            if "Timestamp" in df.columns and df["Timestamp"].dtype not in [pl.Int64, pl.Float64]:
+            if "Timestamp" in df.columns and df["Timestamp"].dtype not in [
+                pl.Int64,
+                pl.Float64,
+            ]:
                 df = df.with_columns(pl.col("Timestamp").cast(pl.Int64))
             return df
 
-        elif library == 'pyspark':
+        elif library == "pyspark":
             # Ensure Spark session exists
+            # from pyspark.sql import SparkSession
+            from pyspark.sql.functions import col
+
             if self.spark is None:
                 raise ValueError("Spark session not initialized")
             df = self.spark.read.csv(self.csv_path, header=True, inferSchema=True)
@@ -89,16 +100,19 @@ class DataFrameLoader:
                 df = df.withColumn("Timestamp", col("Timestamp").cast("long"))
             return df
 
-        elif library == 'sql':
+        elif library == "sql":
             return self.load_from_sql()
 
         else:
-            raise ValueError("Unsupported library. Choose 'pandas', 'polars', 'pyspark', or 'sql'.")
+            raise ValueError(
+                "Unsupported library. Choose 'pandas', 'polars', 'pyspark', or 'sql'."
+            )
 
     def load_from_sql(self):
         sys.path.append("../dao")
-        from btc_dao import BitcoinOHLCDAO  
-        dao = BitcoinOHLCDAO(host='btc-mysql', user='root', password='example')
+        from btc_dao import BitcoinOHLCDAO
+
+        dao = BitcoinOHLCDAO(host="btc-mysql", user="root", password="example")
         try:
             rows = dao.fetch_all()
             columns = ["id", "Timestamp", "Open", "High", "Low", "Close", "Volume"]
@@ -131,71 +145,81 @@ class DataFrameLoader:
         timings : dict
             Dictionary of timing results for each library and operation
         """
-        libraries = ['pandas', 'polars', 'pyspark']
+        libraries = ["pandas", "polars", "pyspark"]
         timings = {lib: {} for lib in libraries}
 
         for lib in libraries:
             # ---------- 1. Read CSV ----------
             start = time.time()
             df = self.load(lib)
-            timings[lib]['read'] = time.time() - start
+            timings[lib]["read"] = time.time() - start
 
             # ---------- 2. Fetch head ----------
             start = time.time()
-            if lib == 'pyspark':
+            if lib == "pyspark":
                 # Spark action required to trigger execution
                 df.show(5, truncate=False)
             else:
                 # Pandas/Polars head fetch
                 df.head()
-            timings[lib]['head'] = time.time() - start
+            timings[lib]["head"] = time.time() - start
 
             # ---------- 3. Filter ----------
             start = time.time()
-            if lib == 'pandas':
-                _ = df[df['Close'] > 50000]
-            elif lib == 'polars':
+            if lib == "pandas":
+                _ = df[df["Close"] > 50000]
+            elif lib == "polars":
                 _ = df.filter(pl.col("Close") > 50000)
-            elif lib == 'pyspark':
+            elif lib == "pyspark":
                 _ = df.filter(df["Close"] > 50000).count()  # Spark requires action
-            timings[lib]['filter'] = time.time() - start
+            timings[lib]["filter"] = time.time() - start
 
             # ---------- 4. GroupBy Year and Compute Mean ----------
             start = time.time()
-            if 'Timestamp' in df.columns:
-                if lib == 'pandas':
+            if "Timestamp" in df.columns:
+                if lib == "pandas":
                     # Convert epoch seconds to year on the fly
-                    df['Year'] = pd.to_datetime(df['Timestamp'], unit='s').dt.year
-                    _ = df.groupby('Year')['Close'].mean()
-                elif lib == 'polars':
+                    df["Year"] = pd.to_datetime(df["Timestamp"], unit="s").dt.year
+                    _ = df.groupby("Year")["Close"].mean()
+                elif lib == "polars":
                     # Approximate year: seconds since 1970 / 31556952 + 1970
                     df = df.with_columns(
-                        ((pl.col("Timestamp") / 31556952 + 1970).cast(pl.Int64)).alias("Year")
+                        ((pl.col("Timestamp") / 31556952 + 1970).cast(pl.Int64)).alias(
+                            "Year"
+                        )
                     )
                     _ = df.group_by("Year").agg(pl.mean("Close"))
-                elif lib == 'pyspark':
+                elif lib == "pyspark":
+                    from pyspark.sql.functions import (
+                        col,
+                        from_unixtime,
+                        year,
+                        mean as Fmean,
+                    )
+
                     # Use Spark SQL functions to extract year and compute mean
                     df = df.withColumn("Year", year(from_unixtime(col("Timestamp"))))
                     _ = df.groupBy("Year").agg(Fmean("Close"))
-            timings[lib]['groupby_mean'] = time.time() - start
+            timings[lib]["groupby_mean"] = time.time() - start
 
         # ---------- 5. Plot Benchmark ----------
-        ops = ['read', 'head', 'filter', 'groupby_mean']
+        ops = ["read", "head", "filter", "groupby_mean"]
         x = range(len(libraries))
-        plt.figure(figsize=(12,6))
+        plt.figure(figsize=(12, 6))
 
         # Plot each operation as a separate bar
         for idx, op in enumerate(ops):
             times = [timings[lib][op] for lib in libraries]
-            plt.bar([i + idx*0.2 for i in x], times, width=0.2, label=op)
+            plt.bar([i + idx * 0.2 for i in x], times, width=0.2, label=op)
 
         plt.xticks([i + 0.3 for i in x], libraries)
-        plt.ylabel('Time (seconds)')
-        plt.title('CSV Benchmark: Pandas vs Polars vs PySpark (Epoch Timestamp)')
+        plt.ylabel("Time (seconds)")
+        plt.title("CSV Benchmark: Pandas vs Polars vs PySpark (Epoch Timestamp)")
         plt.legend()
         plt.show()
 
         return timings
+
 
 # ------------------------
 # EXPLORATORY DATA ANALYSIS (EDA)
@@ -228,9 +252,9 @@ class CryptoEDA:
         self.df = df.clone()
 
         # Convert epoch seconds to datetime for plotting
-        self.df = self.df.with_columns([
-            (pl.col("Timestamp") * 1000).cast(pl.Datetime("ms")).alias("Timestamp_dt")
-        ])
+        self.df = self.df.with_columns(
+            [(pl.col("Timestamp") * 1000).cast(pl.Datetime("ms")).alias("Timestamp_dt")]
+        )
 
     # ------------------------
     # 1. Overview
@@ -256,18 +280,29 @@ class CryptoEDA:
         recent_seconds : int, optional
             If provided, plot only the last `recent_seconds` of data to focus on recent trends.
         """
-        plt.figure(figsize=(15,5))
+        plt.figure(figsize=(15, 5))
 
         df_plot = self.df
         if recent_seconds is not None:
             # Filter last N seconds
             window_time = self.df["Timestamp"].max()
-            df_plot = self.df.filter(pl.col("Timestamp") > (window_time - recent_seconds))
+            df_plot = self.df.filter(
+                pl.col("Timestamp") > (window_time - recent_seconds)
+            )
 
-        plt.plot(df_plot["Timestamp_dt"].to_numpy(), df_plot["Close"].to_numpy(),
-                 label="Close Price", color="blue")
-        plt.plot(df_plot["Timestamp_dt"].to_numpy(), df_plot["Open"].to_numpy(),
-                 label="Open Price", color="orange", alpha=0.7)
+        plt.plot(
+            df_plot["Timestamp_dt"].to_numpy(),
+            df_plot["Close"].to_numpy(),
+            label="Close Price",
+            color="blue",
+        )
+        plt.plot(
+            df_plot["Timestamp_dt"].to_numpy(),
+            df_plot["Open"].to_numpy(),
+            label="Open Price",
+            color="orange",
+            alpha=0.7,
+        )
 
         plt.xlabel("Time")
         plt.ylabel("Price (USD)")
@@ -285,9 +320,13 @@ class CryptoEDA:
         """
         Plot trading volume over time.
         """
-        plt.figure(figsize=(15,5))
-        plt.plot(self.df["Timestamp_dt"].to_numpy(), self.df["Volume"].to_numpy(),
-                 color="green", alpha=0.6)
+        plt.figure(figsize=(15, 5))
+        plt.plot(
+            self.df["Timestamp_dt"].to_numpy(),
+            self.df["Volume"].to_numpy(),
+            color="green",
+            alpha=0.6,
+        )
         plt.xlabel("Time")
         plt.ylabel("Volume (BTC)")
         plt.title("Bitcoin Trading Volume")
@@ -306,9 +345,9 @@ class CryptoEDA:
         self : CryptoEDA
             Updated dataframe with 'returns' column
         """
-        self.df = self.df.with_columns([
-            (pl.col("Close").pct_change()).alias("returns")
-        ])
+        self.df = self.df.with_columns(
+            [(pl.col("Close").pct_change()).alias("returns")]
+        )
         return self
 
     def plot_returns_distribution(self):
@@ -316,7 +355,7 @@ class CryptoEDA:
         Plot histogram and KDE of returns to visualize distribution.
         """
         returns = self.df["returns"].to_numpy()
-        plt.figure(figsize=(10,5))
+        plt.figure(figsize=(10, 5))
         sns.histplot(returns, bins=100, kde=True, color="purple")
         plt.title("Distribution of Returns")
         plt.xlabel("Returns")
@@ -335,9 +374,9 @@ class CryptoEDA:
         window : int
             Rolling window size in seconds or periods
         """
-        self.df = self.df.with_columns([
-            pl.col("returns").rolling_std(window).alias(f"volatility_{window}s")
-        ])
+        self.df = self.df.with_columns(
+            [pl.col("returns").rolling_std(window).alias(f"volatility_{window}s")]
+        )
         return self
 
     def plot_rolling_volatility(self, window: int = 60):
@@ -349,9 +388,12 @@ class CryptoEDA:
         window : int
             Rolling window size (must match `add_rolling_volatility`)
         """
-        plt.figure(figsize=(15,5))
-        plt.plot(self.df["Timestamp_dt"].to_numpy(), self.df[f"volatility_{window}s"].to_numpy(),
-                 color="red")
+        plt.figure(figsize=(15, 5))
+        plt.plot(
+            self.df["Timestamp_dt"].to_numpy(),
+            self.df[f"volatility_{window}s"].to_numpy(),
+            color="red",
+        )
         plt.title(f"Rolling {window}s Volatility")
         plt.xlabel("Time")
         plt.ylabel("Volatility")
@@ -370,10 +412,10 @@ class CryptoEDA:
             List of columns to include in correlation. Default is ["Open","High","Low","Close","Volume","returns"].
         """
         df_pandas = self.df.to_pandas()
-        numeric_cols = columns or ["Open","High","Low","Close","Volume","returns"]
+        numeric_cols = columns or ["Open", "High", "Low", "Close", "Volume", "returns"]
         corr = df_pandas[numeric_cols].corr()
 
-        plt.figure(figsize=(8,6))
+        plt.figure(figsize=(8, 6))
         sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2f")
         plt.title("Correlation Heatmap")
         plt.show()
@@ -391,7 +433,9 @@ class CryptoEDA:
             Number of most recent candles to show
         """
         # Sort descending and take last N rows
-        df_candle_pd = self.df.sort("Timestamp_dt", descending=True).head(last_n).to_pandas()
+        df_candle_pd = (
+            self.df.sort("Timestamp_dt", descending=True).head(last_n).to_pandas()
+        )
         df_candle_pd.set_index("Timestamp_dt", inplace=True)
 
         mpf.plot(
@@ -399,13 +443,18 @@ class CryptoEDA:
             type="candle",
             volume=True,
             style="charles",
-            title=f"Last {last_n} Candles"
+            title=f"Last {last_n} Candles",
         )
 
     # ------------------------
     # 8. Run all EDA
     # ------------------------
-    def run_all(self, recent_seconds: int = None, vol_window: int = 60, candlestick_rows: int = 50):
+    def run_all(
+        self,
+        recent_seconds: int = None,
+        vol_window: int = 60,
+        candlestick_rows: int = 50,
+    ):
         """
         Convenience method to run all EDA steps in sequence.
 
@@ -428,13 +477,14 @@ class CryptoEDA:
         self.plot_correlation_heatmap()
         self.plot_candlestick(last_n=candlestick_rows)
 
+
 # ------------------------
 # Perform Feature Engineering using Polars
 # ------------------------
 class CryptoFeatureEngineer:
     """
     Feature engineering for cryptocurrency OHLCV (Open, High, Low, Close, Volume) data using Polars.
-    
+
     Features added:
     1. Returns and spreads
     2. Lag features for previous periods
@@ -443,6 +493,7 @@ class CryptoFeatureEngineer:
     5. MACD (Moving Average Convergence Divergence)
     6. Bollinger Bands
     """
+
     def __init__(self, df: pl.DataFrame):
         """
         Initialize with a Polars DataFrame.
@@ -467,16 +518,28 @@ class CryptoFeatureEngineer:
         - candle_upper_shadow: distance from max(open, close) to high
         - candle_lower_shadow: distance from min(open, close) to low
         """
-        self.df = self.df.with_columns([
-            (pl.col("Close") / pl.col("Close").shift(1) - 1).alias("return"),
-            (pl.col("High") - pl.col("Low")).alias("high_low_spread"),
-            (pl.col("Close") - pl.col("Open")).alias("open_close_diff"),
-            (pl.col("Close") - pl.col("Open")).abs().alias("candle_body"),
-            (pl.col("High") - pl.concat_list([pl.col("Close"), pl.col("Open")]).max().over("Close")).alias("candle_upper_shadow"),
-            (pl.concat_list([pl.col("Close"), pl.col("Open")]).min().over("Close") - pl.col("Low")).alias("candle_lower_shadow")
-        ])
+        self.df = self.df.with_columns(
+            [
+                (pl.col("Close") / pl.col("Close").shift(1) - 1).alias("return"),
+                (pl.col("High") - pl.col("Low")).alias("high_low_spread"),
+                (pl.col("Close") - pl.col("Open")).alias("open_close_diff"),
+                (pl.col("Close") - pl.col("Open")).abs().alias("candle_body"),
+                (
+                    pl.col("High")
+                    - pl.concat_list([pl.col("Close"), pl.col("Open")])
+                    .max()
+                    .over("Close")
+                ).alias("candle_upper_shadow"),
+                (
+                    pl.concat_list([pl.col("Close"), pl.col("Open")])
+                    .min()
+                    .over("Close")
+                    - pl.col("Low")
+                ).alias("candle_lower_shadow"),
+            ]
+        )
         return self
-    
+
     # ------------------------
     # 2. Features aggregation using groupby
     # ------------------------
@@ -493,7 +556,9 @@ class CryptoFeatureEngineer:
         elif group_col == "Month" and "Month" not in self.df.columns:
             # 2629746 = seconds in a month (approx, not exact for all months)
             self.df = self.df.with_columns(
-                ((pl.col("Timestamp") / 2629746 + 1970 * 12).cast(pl.Int64)).alias("Month")
+                ((pl.col("Timestamp") / 2629746 + 1970 * 12).cast(pl.Int64)).alias(
+                    "Month"
+                )
             )
         elif group_col == "Day" and "Day" not in self.df.columns:
             # 86400 = seconds in a day
@@ -501,25 +566,26 @@ class CryptoFeatureEngineer:
                 ((pl.col("Timestamp") / 86400 + 1970 * 365).cast(pl.Int64)).alias("Day")
             )
         # Group by and aggregate
-        agg_df = self.df.group_by(group_col).agg([
-            pl.col("Close").mean().alias(f"{group_col}_Close_mean"),
-            pl.col("Close").std().alias(f"{group_col}_Close_std"),
-            pl.col("Close").min().alias(f"{group_col}_Close_min"),
-            pl.col("Close").max().alias(f"{group_col}_Close_max"),
-            pl.col("Open").mean().alias(f"{group_col}_Open_mean"),
-            pl.col("Open").std().alias(f"{group_col}_Open_std"),
-            pl.col("Open").min().alias(f"{group_col}_Open_min"),
-            pl.col("Open").max().alias(f"{group_col}_Open_max"),
-        ])
+        agg_df = self.df.group_by(group_col).agg(
+            [
+                pl.col("Close").mean().alias(f"{group_col}_Close_mean"),
+                pl.col("Close").std().alias(f"{group_col}_Close_std"),
+                pl.col("Close").min().alias(f"{group_col}_Close_min"),
+                pl.col("Close").max().alias(f"{group_col}_Close_max"),
+                pl.col("Open").mean().alias(f"{group_col}_Open_mean"),
+                pl.col("Open").std().alias(f"{group_col}_Open_std"),
+                pl.col("Open").min().alias(f"{group_col}_Open_min"),
+                pl.col("Open").max().alias(f"{group_col}_Open_max"),
+            ]
+        )
         # Join back to main df
         self.df = self.df.join(agg_df, on=group_col, how="left")
         return self
 
-
     # ------------------------
     # 3. Lag features
     # ------------------------
-    def lag_features(self, lags=[1,2,3,5,10]):
+    def lag_features(self, lags=[1, 2, 3, 5, 10]):
         """
         Adds lag features for Close and Volume.
 
@@ -529,10 +595,12 @@ class CryptoFeatureEngineer:
             List of lag periods
         """
         for lag in lags:
-            self.df = self.df.with_columns([
-                pl.col("Close").shift(lag).alias(f"Close_lag_{lag}"),
-                pl.col("Volume").shift(lag).alias(f"Volume_lag_{lag}")
-            ])
+            self.df = self.df.with_columns(
+                [
+                    pl.col("Close").shift(lag).alias(f"Close_lag_{lag}"),
+                    pl.col("Volume").shift(lag).alias(f"Volume_lag_{lag}"),
+                ]
+            )
         return self
 
     # ------------------------
@@ -547,19 +615,24 @@ class CryptoFeatureEngineer:
         - True range (tr) and ATR
         - Volume changes and moving averages
         """
-        self.df = self.df.with_columns([
-            pl.col("Close").rolling_mean(5).shift(1).alias("SMA_5"),
-            pl.col("Close").rolling_mean(10).shift(1).alias("SMA_10"),
-            pl.col("Close").ewm_mean(alpha=2/(5+1)).shift(1).alias("EMA_5"),
-            pl.col("Close").ewm_mean(alpha=2/(10+1)).shift(1).alias("EMA_10"),
-            pl.col("Close").rolling_std(5).shift(1).alias("volatility_5"),
-            pl.col("Close").rolling_std(10).shift(1).alias("volatility_10"),
-            (pl.col("High") - pl.col("Low")).alias("tr"),
-            (pl.col("High") - pl.col("Low")).rolling_mean(5).shift(1).alias("ATR_5"),
-            (pl.col("Volume").pct_change().shift(1)).alias("volume_change"),
-            (pl.col("Volume").rolling_mean(5).shift(1)).alias("vol_ma_5"),
-            (pl.col("Volume").rolling_mean(10).shift(1)).alias("vol_ma_10"),
-        ])
+        self.df = self.df.with_columns(
+            [
+                pl.col("Close").rolling_mean(5).shift(1).alias("SMA_5"),
+                pl.col("Close").rolling_mean(10).shift(1).alias("SMA_10"),
+                pl.col("Close").ewm_mean(alpha=2 / (5 + 1)).shift(1).alias("EMA_5"),
+                pl.col("Close").ewm_mean(alpha=2 / (10 + 1)).shift(1).alias("EMA_10"),
+                pl.col("Close").rolling_std(5).shift(1).alias("volatility_5"),
+                pl.col("Close").rolling_std(10).shift(1).alias("volatility_10"),
+                (pl.col("High") - pl.col("Low")).alias("tr"),
+                (pl.col("High") - pl.col("Low"))
+                .rolling_mean(5)
+                .shift(1)
+                .alias("ATR_5"),
+                (pl.col("Volume").pct_change().shift(1)).alias("volume_change"),
+                (pl.col("Volume").rolling_mean(5).shift(1)).alias("vol_ma_5"),
+                (pl.col("Volume").rolling_mean(10).shift(1)).alias("vol_ma_10"),
+            ]
+        )
         return self
 
     # ------------------------
@@ -581,23 +654,41 @@ class CryptoFeatureEngineer:
             Number of periods to calculate RSI
         """
         # Step 1: Delta
-        self.df = self.df.with_columns([
-            pl.col("Close").diff().alias("delta")
-        ])
+        self.df = self.df.with_columns([pl.col("Close").diff().alias("delta")])
         # Step 2: Gains and losses
-        self.df = self.df.with_columns([
-            pl.when(pl.col("delta") > 0).then(pl.col("delta")).otherwise(0).alias("gain"),
-            pl.when(pl.col("delta") < 0).then(-pl.col("delta")).otherwise(0).alias("loss")
-        ])
+        self.df = self.df.with_columns(
+            [
+                pl.when(pl.col("delta") > 0)
+                .then(pl.col("delta"))
+                .otherwise(0)
+                .alias("gain"),
+                pl.when(pl.col("delta") < 0)
+                .then(-pl.col("delta"))
+                .otherwise(0)
+                .alias("loss"),
+            ]
+        )
         # Step 3: Rolling averages (shifted by 1 to prevent leakage)
-        self.df = self.df.with_columns([
-            pl.col("gain").rolling_mean(window_size=window, min_samples=1).shift(1).alias("avg_gain"),
-            pl.col("loss").rolling_mean(window_size=window, min_samples=1).shift(1).alias("avg_loss")
-        ])
+        self.df = self.df.with_columns(
+            [
+                pl.col("gain")
+                .rolling_mean(window_size=window, min_samples=1)
+                .shift(1)
+                .alias("avg_gain"),
+                pl.col("loss")
+                .rolling_mean(window_size=window, min_samples=1)
+                .shift(1)
+                .alias("avg_loss"),
+            ]
+        )
         # Step 4: RSI calculation
-        self.df = self.df.with_columns([
-            (100 - 100 / (1 + (pl.col("avg_gain") / pl.col("avg_loss")))).alias(f"RSI_{window}")
-        ])
+        self.df = self.df.with_columns(
+            [
+                (100 - 100 / (1 + (pl.col("avg_gain") / pl.col("avg_loss")))).alias(
+                    f"RSI_{window}"
+                )
+            ]
+        )
         return self
 
     # ------------------------
@@ -609,14 +700,13 @@ class CryptoFeatureEngineer:
         - MACD line = EMA(12) - EMA(26)
         - MACD signal = EMA(9) of MACD line
         """
-        ema_12 = self.df["Close"].ewm_mean(alpha=2/(12+1)).shift(1)
-        ema_26 = self.df["Close"].ewm_mean(alpha=2/(26+1)).shift(1)
+        ema_12 = self.df["Close"].ewm_mean(alpha=2 / (12 + 1)).shift(1)
+        ema_26 = self.df["Close"].ewm_mean(alpha=2 / (26 + 1)).shift(1)
         macd_line = ema_12 - ema_26
-        macd_signal = macd_line.ewm_mean(alpha=2/(9+1)).shift(1)
-        self.df = self.df.with_columns([
-            macd_line.alias("MACD"),
-            macd_signal.alias("MACD_signal")
-        ])
+        macd_signal = macd_line.ewm_mean(alpha=2 / (9 + 1)).shift(1)
+        self.df = self.df.with_columns(
+            [macd_line.alias("MACD"), macd_signal.alias("MACD_signal")]
+        )
         return self
 
     # ------------------------
@@ -632,12 +722,14 @@ class CryptoFeatureEngineer:
         """
         mid = self.df["Close"].rolling_mean(window).shift(1)
         std = self.df["Close"].rolling_std(window).shift(1)
-        self.df = self.df.with_columns([
-            mid.alias("BB_mid"),
-            std.alias("BB_std"),
-            (mid + 2*std).alias("BB_upper"),
-            (mid - 2*std).alias("BB_lower")
-        ])
+        self.df = self.df.with_columns(
+            [
+                mid.alias("BB_mid"),
+                std.alias("BB_std"),
+                (mid + 2 * std).alias("BB_upper"),
+                (mid - 2 * std).alias("BB_lower"),
+            ]
+        )
         return self
 
     # ------------------------
@@ -648,7 +740,8 @@ class CryptoFeatureEngineer:
         Returns the engineered Polars DataFrame.
         """
         return self.df
-    
+
+
 # ------------------------
 # Dataset Loader for ML
 # ------------------------
@@ -667,10 +760,17 @@ class CryptoDatasetLoader:
     - Can visualise PCA explained variance if PCA is applied.
     """
 
-    def __init__(self, df: pl.DataFrame, target_col: str = "Close",
-                 essential_features: List[str] = None, test_size: float = 0.2,
-                 scale: bool = True, apply_pca: bool = False, pca_variance: float = 0.95,
-                 subset_size: Optional[int] = None):
+    def __init__(
+        self,
+        df: pl.DataFrame,
+        target_col: str = "Close",
+        essential_features: List[str] = None,
+        test_size: float = 0.2,
+        scale: bool = True,
+        apply_pca: bool = False,
+        pca_variance: float = 0.95,
+        subset_size: Optional[int] = None,
+    ):
         """
         Initialize the loader with dataset and options.
 
@@ -686,7 +786,13 @@ class CryptoDatasetLoader:
         """
         self.df = df.clone()
         self.target_col = target_col
-        self.essential_features = essential_features or ["Close", "Open", "High", "Low", "Volume"]
+        self.essential_features = essential_features or [
+            "Close",
+            "Open",
+            "High",
+            "Low",
+            "Volume",
+        ]
         self.test_size = test_size
         self.scale = scale
         self.apply_pca = apply_pca
@@ -700,9 +806,9 @@ class CryptoDatasetLoader:
 
     def create_target(self):
         """Create the target column as the next-period value of `target_col`."""
-        self.df = self.df.with_columns([
-            pl.col(self.target_col).shift(-1).alias("target")
-        ])
+        self.df = self.df.with_columns(
+            [pl.col(self.target_col).shift(-1).alias("target")]
+        )
         return self
 
     def filter_nulls(self):
@@ -726,7 +832,7 @@ class CryptoDatasetLoader:
     def _apply_subset(self):
         """Restrict dataset to the last `subset_size` rows if specified."""
         if self.subset_size is not None and self.subset_size < self.df.height:
-            self.df = self.df[-self.subset_size:]
+            self.df = self.df[-self.subset_size :]
             print(f"Using last {self.subset_size} rows for training/testing")
 
     def get_features_targets(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -742,7 +848,9 @@ class CryptoDatasetLoader:
         self._apply_subset()
 
         # Select all columns except Timestamp and target
-        feature_cols = [col for col in self.df.columns if col not in ["Timestamp", "target"]]
+        feature_cols = [
+            col for col in self.df.columns if col not in ["Timestamp", "target"]
+        ]
         print(f"Using features: {feature_cols}")
 
         # Convert Polars DataFrame to NumPy arrays
@@ -773,7 +881,9 @@ class CryptoDatasetLoader:
         if self.apply_pca:
             self.pca = PCA(n_components=self.pca_variance)
             X = self.pca.fit_transform(X)
-            print(f"PCA applied: Original features={len(feature_cols)}, PCA features={X.shape[1]}")
+            print(
+                f"PCA applied: Original features={len(feature_cols)}, PCA features={X.shape[1]}"
+            )
 
         return X, y.flatten()  # return 1D y
 
@@ -804,19 +914,24 @@ class CryptoDatasetLoader:
         explained_var = self.pca.explained_variance_ratio_
         cumulative_var = np.cumsum(explained_var)
 
-        plt.figure(figsize=(14,5))
+        plt.figure(figsize=(14, 5))
 
         # Scree plot
-        plt.subplot(1,2,1)
-        plt.plot(range(1, len(explained_var)+1), explained_var, marker='o')
+        plt.subplot(1, 2, 1)
+        plt.plot(range(1, len(explained_var) + 1), explained_var, marker="o")
         plt.title("Explained Variance Ratio per Principal Component")
         plt.xlabel("Principal Component")
         plt.ylabel("Explained Variance Ratio")
 
         # Cumulative explained variance
-        plt.subplot(1,2,2)
-        plt.plot(range(1, len(cumulative_var)+1), cumulative_var, marker='o', color="orange")
-        plt.axhline(y=0.95, color='r', linestyle='--', label='95 percent threshold')
+        plt.subplot(1, 2, 2)
+        plt.plot(
+            range(1, len(cumulative_var) + 1),
+            cumulative_var,
+            marker="o",
+            color="orange",
+        )
+        plt.axhline(y=0.95, color="r", linestyle="--", label="95 percent threshold")
         plt.title("Cumulative Explained Variance")
         plt.xlabel("Number of Principal Components")
         plt.ylabel("Cumulative Explained Variance")
@@ -842,9 +957,16 @@ class ModelEvaluator:
     4. Residual analysis: residuals vs predicted, actual vs predicted
     5. Residuals over time (requires timestamp column in dataframe)
     """
-    def __init__(self, model, X_test: np.ndarray, y_test: np.ndarray, 
-                 df: Optional[pl.DataFrame] = None, timestamp_col: str = "Timestamp",
-                 feature_names: Optional[List[str]] = None):
+
+    def __init__(
+        self,
+        model,
+        X_test: np.ndarray,
+        y_test: np.ndarray,
+        df: Optional[pl.DataFrame] = None,
+        timestamp_col: str = "Timestamp",
+        feature_names: Optional[List[str]] = None,
+    ):
         """
         Initialize the evaluator.
 
@@ -869,8 +991,8 @@ class ModelEvaluator:
         self.df = df
         self.timestamp_col = timestamp_col
         self.feature_names = feature_names
-        self.y_pred = None  
-        self.residuals = None  
+        self.y_pred = None
+        self.residuals = None
 
     # ------------------------
     # 1. Make predictions
@@ -945,7 +1067,7 @@ class ModelEvaluator:
                 sorted_importances = sorted_importances[:top_n]
                 sorted_features = sorted_features[:top_n]
 
-            plt.figure(figsize=(12,6))
+            plt.figure(figsize=(12, 6))
             plt.bar(range(len(sorted_importances)), sorted_importances)
             plt.xticks(range(len(sorted_importances)), sorted_features, rotation=90)
             plt.xlabel("Feature")
@@ -971,22 +1093,25 @@ class ModelEvaluator:
         if self.y_pred is None:
             self.predict()
 
-        plt.figure(figsize=(12,5))
+        plt.figure(figsize=(12, 5))
 
         # Residuals vs Predicted
-        plt.subplot(1,2,1)
-        plt.scatter(self.y_pred, self.residuals, alpha=0.5, color='teal')
-        plt.axhline(0, color='red', linestyle='--')
+        plt.subplot(1, 2, 1)
+        plt.scatter(self.y_pred, self.residuals, alpha=0.5, color="teal")
+        plt.axhline(0, color="red", linestyle="--")
         plt.xlabel("Predicted")
         plt.ylabel("Residuals")
         plt.title("Residuals vs Predicted")
 
         # Actual vs Predicted
-        plt.subplot(1,2,2)
-        plt.scatter(self.y_test, self.y_pred, alpha=0.5, color='orange')
-        plt.plot([self.y_test.min(), self.y_test.max()],
-                 [self.y_test.min(), self.y_test.max()],
-                 'r--', linewidth=2)
+        plt.subplot(1, 2, 2)
+        plt.scatter(self.y_test, self.y_pred, alpha=0.5, color="orange")
+        plt.plot(
+            [self.y_test.min(), self.y_test.max()],
+            [self.y_test.min(), self.y_test.max()],
+            "r--",
+            linewidth=2,
+        )
         plt.xlabel("Actual")
         plt.ylabel("Predicted")
         plt.title("Actual vs Predicted")
@@ -1014,13 +1139,22 @@ class ModelEvaluator:
             self.predict()
 
         # Use last N rows corresponding to test set length
-        df_subset = self.df.tail(len(self.y_pred)).select([self.timestamp_col]).to_pandas()
+        df_subset = (
+            self.df.tail(len(self.y_pred)).select([self.timestamp_col]).to_pandas()
+        )
         # Convert epoch seconds or milliseconds to datetime
-        df_subset[self.timestamp_col] = pd.to_datetime(df_subset[self.timestamp_col] * 1000, unit='ms')
+        df_subset[self.timestamp_col] = pd.to_datetime(
+            df_subset[self.timestamp_col] * 1000, unit="ms"
+        )
 
-        plt.figure(figsize=(15,5))
-        plt.plot(df_subset[self.timestamp_col], self.residuals, label="Residuals", color="teal")
-        plt.axhline(0, color='red', linestyle='--')
+        plt.figure(figsize=(15, 5))
+        plt.plot(
+            df_subset[self.timestamp_col],
+            self.residuals,
+            label="Residuals",
+            color="teal",
+        )
+        plt.axhline(0, color="red", linestyle="--")
         plt.xlabel("Time")
         plt.ylabel("Residuals")
         plt.title("Residuals over Time")
@@ -1041,7 +1175,7 @@ if __name__ == "__main__":
     # ------------------------
     csv_file_path = "btcusd_1-min_data.csv"
     loader = DataFrameLoader(csv_file_path)
-    '''
+    """
     # Load Pandas DataFrame
     df_pd = loader.load('pandas')
 
@@ -1050,7 +1184,7 @@ if __name__ == "__main__":
 
     # Load PySpark DataFrame
     df_spark = loader.load('pyspark')
-    '''
+    """
     # Benchmark performance
     timings = loader.benchmark()
 
@@ -1060,11 +1194,10 @@ if __name__ == "__main__":
     for lib, results in benchmark_results.items():
         print(lib, results)
 
-
     # ------------------------
     # Perform EDA using Polars
     # ------------------------
-    df = loader.load('polars')
+    df = loader.load("polars")
 
     # df is your Polars DataFrame with OHLCV and Timestamp columns
     eda = CryptoEDA(df)
@@ -1074,14 +1207,14 @@ if __name__ == "__main__":
     eda.run_all(recent_seconds=3600, vol_window=60, candlestick_rows=50)
 
     #  Or individual plots
-    '''
+    """
     eda.plot_price_trend()
     eda.plot_volume_trend()
     eda.add_returns()
     eda.plot_returns_distribution()
-    '''
+    """
 
-    df = loader.load('polars')
+    df = loader.load("polars")
     fe = CryptoFeatureEngineer(df)
     df_feat = (
         fe.basic_features()
@@ -1096,16 +1229,16 @@ if __name__ == "__main__":
 
     df_feat.tail(10).to_pandas()
 
-    # ---------------  
+    # ---------------
     # PREPARE ML DATASET
-    # --------------- 
+    # ---------------
     dataloader = CryptoDatasetLoader(
         df_feat,
         target_col="Close",
         scale=True,
         apply_pca=True,
         pca_variance=0.95,
-        subset_size=100000   # only use last 100000 rows
+        subset_size=100000,  # only use last 100000 rows
     )
 
     dataloader.create_target().filter_nulls()
@@ -1113,26 +1246,28 @@ if __name__ == "__main__":
 
     dataloader.visualise_pca()
 
-    # ---------------------  
+    # ---------------------
     # TRAIN RANDOM FOREST MODEL
     # ---------------------
     rf_model = RandomForestRegressor(
-        n_estimators=100,    # fewer trees for a quick test
-        max_depth=10,         # shallower trees, faster
+        n_estimators=100,  # fewer trees for a quick test
+        max_depth=10,  # shallower trees, faster
         random_state=42,
-        n_jobs=-1,           # use all CPU cores
-        verbose=1            # prints minimal progress info
+        n_jobs=-1,  # use all CPU cores
+        verbose=1,  # prints minimal progress info
     )
 
     # Train on the small subset
     rf_model.fit(X_train, y_train)
 
-    # ---------------------  
+    # ---------------------
     # EVALUATE MODEL PERFORMANCE
     # ---------------------
 
     # Pass feature names from your dataset or PCA columns
-    feature_cols = [col for col in df_feat.columns if col not in ["Timestamp", "target"]]
+    feature_cols = [
+        col for col in df_feat.columns if col not in ["Timestamp", "target"]
+    ]
 
     evaluator = ModelEvaluator(
         model=rf_model,
@@ -1140,7 +1275,7 @@ if __name__ == "__main__":
         y_test=y_test,
         df=df,
         timestamp_col="Timestamp",
-        feature_names=feature_cols
+        feature_names=feature_cols,
     )
 
     evaluator.predict()

@@ -15,14 +15,14 @@ install:
 # -------------------------------
 # Automatically format all Python files in the project using Black
 format:
-	 cd Week4 && black .
+	 black .
 
 # -------------------------------
 # Target: lint
 # -------------------------------
 # Run flake8 on all Python files to check for PEP8 compliance
 lint:
-	 cd Week4 && flake8 --ignore=C,N,E .
+	 flake8 --ignore=C,N,E,W503 .
 
 # -------------------------------
 # Target: test

@@ -10,8 +10,9 @@ from Week2.Bitcoin_DataAnalysis import (
     DataFrameLoader,
     CryptoFeatureEngineer,
     CryptoDatasetLoader,
-    ModelEvaluator
+    ModelEvaluator,
 )
+
 
 # -----------------------------
 # Fixtures
@@ -28,30 +29,35 @@ def sample_csv():
     yield tmp.name
     os.remove(tmp.name)
 
+
 @pytest.fixture
 def ohlcv_df():
     """Polars DataFrame with OHLCV data for feature engineering tests."""
-    return pl.DataFrame({
-        "Timestamp": [1, 2, 3, 4, 5],
-        "Open": [100, 102, 104, 106, 108],
-        "High": [105, 107, 109, 111, 113],
-        "Low": [95, 97, 99, 101, 103],
-        "Close": [102, 104, 106, 108, 110],
-        "Volume": [10, 20, 30, 40, 50]
-    })
+    return pl.DataFrame(
+        {
+            "Timestamp": [1, 2, 3, 4, 5],
+            "Open": [100, 102, 104, 106, 108],
+            "High": [105, 107, 109, 111, 113],
+            "Low": [95, 97, 99, 101, 103],
+            "Close": [102, 104, 106, 108, 110],
+            "Volume": [10, 20, 30, 40, 50],
+        }
+    )
 
 
 @pytest.fixture
 def dataset_df():
     """Polars DataFrame with OHLCV for CryptoDatasetLoader tests."""
-    return pl.DataFrame({
-        "Timestamp": [1, 2, 3, 4, 5],
-        "Open": [100, 101, 102, 103, 104],
-        "High": [110, 111, 112, 113, 114],
-        "Low": [90, 91, 92, 93, 94],
-        "Close": [105, 106, 107, 108, 109],
-        "Volume": [1000, 1100, 1200, 1300, 1400],
-    })
+    return pl.DataFrame(
+        {
+            "Timestamp": [1, 2, 3, 4, 5],
+            "Open": [100, 101, 102, 103, 104],
+            "High": [110, 111, 112, 113, 114],
+            "Low": [90, 91, 92, 93, 94],
+            "Close": [105, 106, 107, 108, 109],
+            "Volume": [1000, 1100, 1200, 1300, 1400],
+        }
+    )
 
 
 @pytest.fixture
@@ -68,11 +74,9 @@ def dummy_model_data():
 def dummy_model_df(dummy_model_data):
     """Polars DataFrame with timestamp column for residual-over-time tests."""
     X, y, _ = dummy_model_data
-    return pl.DataFrame({
-        "Timestamp": [1, 2, 3, 4, 5],
-        "Feature": X.flatten(),
-        "Target": y
-    })
+    return pl.DataFrame(
+        {"Timestamp": [1, 2, 3, 4, 5], "Feature": X.flatten(), "Target": y}
+    )
 
 
 # -----------------------------
@@ -119,8 +123,14 @@ class TestCryptoFeatureEngineer:
         fe = CryptoFeatureEngineer(ohlcv_df).basic_features()
         df = fe.get_df()
 
-        expected_cols = ["return", "high_low_spread", "open_close_diff",
-                         "candle_body", "candle_upper_shadow", "candle_lower_shadow"]
+        expected_cols = [
+            "return",
+            "high_low_spread",
+            "open_close_diff",
+            "candle_body",
+            "candle_upper_shadow",
+            "candle_lower_shadow",
+        ]
         for col in expected_cols:
             assert col in df.columns
 
@@ -138,10 +148,12 @@ class TestCryptoFeatureEngineer:
 
     def test_rsi_macd_bollinger(self, ohlcv_df):
         """Test advanced technical indicators: RSI, MACD, Bollinger Bands."""
-        fe = (CryptoFeatureEngineer(ohlcv_df)
-              .rsi(window=3)
-              .macd()
-              .bollinger_bands(window=3))
+        fe = (
+            CryptoFeatureEngineer(ohlcv_df)
+            .rsi(window=3)
+            .macd()
+            .bollinger_bands(window=3)
+        )
         df = fe.get_df()
         assert "RSI_3" in df.columns
         assert "MACD" in df.columns
@@ -163,7 +175,9 @@ class TestCryptoDatasetLoader:
 
     def test_filter_nulls(self, dataset_df):
         """Test that rows with nulls in essential features are dropped."""
-        df_with_null = dataset_df.with_columns(pl.Series("Close", [105, None, 107, 108, 109]))
+        df_with_null = dataset_df.with_columns(
+            pl.Series("Close", [105, None, 107, 108, 109])
+        )
         loader = CryptoDatasetLoader(df_with_null).create_target().filter_nulls()
         assert loader.df.height < df_with_null.height
         assert loader.df["Close"].is_null().sum() == 0
@@ -231,7 +245,9 @@ class TestModelEvaluator:
     def test_residuals_over_time(self, dummy_model_data, dummy_model_df):
         """Test residuals over time plotting with timestamp column."""
         X, y, model = dummy_model_data
-        evaluator = ModelEvaluator(model, X, y, df=dummy_model_df, timestamp_col="Timestamp")
+        evaluator = ModelEvaluator(
+            model, X, y, df=dummy_model_df, timestamp_col="Timestamp"
+        )
         evaluator.plot_residuals_over_time()
 
     def test_residuals_over_time_missing_timestamp(self, dummy_model_data):
@@ -240,13 +256,16 @@ class TestModelEvaluator:
         evaluator = ModelEvaluator(model, X, y, df=None, timestamp_col="Timestamp")
         evaluator.plot_residuals_over_time()
 
+
 class TestSystem:
     def test_full_pipeline_system(self, sample_csv):
         # Load data
         df = DataFrameLoader(sample_csv).load("polars")
 
         # Feature engineering
-        fe = CryptoFeatureEngineer(df).basic_features().lag_features().rolling_features()
+        fe = (
+            CryptoFeatureEngineer(df).basic_features().lag_features().rolling_features()
+        )
         df_fe = fe.get_df()
 
         # Dataset loader

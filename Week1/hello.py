@@ -72,10 +72,7 @@ def hello_world(
 
     # Optionally append a timestamp if requested
     if timestamp:
-        intro += (
-            f"\nGenerated at "
-            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}."
-        )
+        intro += f"\nGenerated at " f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}."
     return intro
 
 
