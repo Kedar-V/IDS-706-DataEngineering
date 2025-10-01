@@ -12,13 +12,16 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
+        
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r ../Week4/requirements.txt
+
     - name: Lint with flake8
-      run: flake8 hello.py
+      run: flake8 ../Week2/Bitcoin_DataAnalysis.py
+
     - name: Run tests
-      run: pytest --cov=hello
+      run: pytest -vv --cov=Bitcoin_DataAnalysis ../Week3/test_BitcoinDataAnalysis.py
 
 
