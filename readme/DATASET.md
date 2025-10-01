@@ -12,6 +12,19 @@ This flexibility allows you to choose the best tool for your dataset
 
 ---
 
+## Dataset
+
+This project uses the [Bitcoin Historical Data](https://www.kaggle.com/datasets/mczielinski/bitcoin-historical-data/data) from Kaggle.
+
+- **Format:** CSV, OHLCV (Open, High, Low, Close, Volume) at 1-minute intervals
+- **Size:** ~350MB (over 2 million rows)
+- **Columns:** Timestamp (epoch seconds), Open, High, Low, Close, Volume
+
+You can download the dataset directly from Kaggle and place it in your project directory.  
+For instructions on loading the dataset into Pandas, Polars, or PySpark, refer to the [DataFrameLoader](#1-dataframeloader) section below and see usage examples in the notebook: [Bitcoin_DataAnalysis.ipynb](./Bitcoin_DataAnalysis.ipynb)
+
+---
+
 ## Installation and Setup
 
 Install all required Python packages:
