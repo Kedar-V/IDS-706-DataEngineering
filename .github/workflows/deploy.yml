@@ -81,4 +81,4 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            docker exec -i python_week4 bash -c "chmod +x /app/startup/startup.sh && /app/startup/startup.sh"
+            docker exec -i python_week4 bash -c "chmod +x /app/startup/startup.sh && nohup /app/startup/startup.sh > /app/startup/startup.log 2>&1 &"
