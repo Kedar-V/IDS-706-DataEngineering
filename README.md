@@ -41,6 +41,7 @@ This repository includes additional documentation for specific aspects of the pr
 4. **[ENV_SETUP.md](readme/ENV_SETUP.md)**: Explains how to set up the development environment using Dev Containers or Docker. It ensures a reproducible and isolated environment for development and testing.
 5. **[CODE_FEATURES.md](readme/CODE_FEATURES.md)**: Highlights the key features of the codebase, such as data loading, EDA, feature engineering, dataset preparation, and model evaluation. It also includes example usage for each module.
 6. **[GIT_ACTIONS.md](readme/GIT_ACTIONS.md)**: Documents the GitHub Actions workflows for CI/CD. It explains the steps for Docker image building, deployment to AWS EC2, and code sanity checks.
+7. **[CRON_JOBS.md](readme/CRON_JOBS.md)**: Highlights the automation of data ingestion, news updates, and model training using cron jobs. Details the scripts, their schedules, and how to set them up.
 
 ## How to Run
 1. Clone the repository:
