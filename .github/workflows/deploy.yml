@@ -39,9 +39,25 @@ jobs:
             chown ec2-user:ec2-user /home/ec2-user/app
 
       # 5. Copy docker-compose.yml and app code to EC2
-      - name: Upload files to EC2
-        run: |
-          scp -i ${{ secrets.EC2_SSH_KEY }} ./docker-compose.yml ec2-user@${{ secrets.EC2_IP }}:/home/ec2-user/app/
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo yum install -y git || sudo apt-get install -y git
+      
+            cd /home/ec2-user/app
+      
+            # 3. Pull the latest code
+            if [ -d ".git" ]; then
+              git reset --hard
+              git pull
+            else
+              git clone https://github.com/<your-username>/<your-repo>.git .
+            fi
+
 
       # 6. Pull latest image and restart containers on EC2
       - name: Start containers on EC2
