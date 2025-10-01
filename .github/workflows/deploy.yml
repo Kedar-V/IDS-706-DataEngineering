@@ -34,6 +34,10 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+
+            mkdir -p /home/ec2-user/app
+            chown ec2-user:ec2-user /home/ec2-user/app
+            
             cd /home/ec2-user/app
             docker-compose pull
             docker-compose down
