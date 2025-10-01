@@ -4,7 +4,7 @@
 
 ## Demo Website
 This website is deployed and live via AWS
-[Click here to view the demo](http://54.250.160.141:8501/)
+[Click here to view the demo](http://13.231.121.59:8501/)
 
 Please note that the site may occasionally lag / crash as it has been hosted on free tier of AWS with very low compute
 
