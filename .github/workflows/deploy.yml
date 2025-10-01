@@ -34,13 +34,14 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            if [ -d "/home/ec2-user/app" ]; then
-                echo "Cleaning up existing /home/ec2-user/app..."
-                rm -rf /home/ec2-user/app
-            fi
 
-            mkdir -p /home/ec2-user/app
-            chown ec2-user:ec2-user /home/ec2-user/app
+            if [ ! -d "/home/ec2-user/app" ]; then
+                echo "Creating /home/ec2-user/app..."
+                mkdir -p /home/ec2-user/app
+                chown ec2-user:ec2-user /home/ec2-user/app
+            else
+                echo "/home/ec2-user/app already exists, skipping creation."
+            fi
 
       # 5. Copy docker-compose.yml and app code to EC2
       - name: Deploy on EC2
