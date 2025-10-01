@@ -52,8 +52,8 @@ jobs:
       
             if [ -d ".git" ]; then
               echo "Repo exists, pulling latest changes..."
-              # git reset --hard
-              # git clean -fd
+              git reset --hard
+              git clean -fd
               git pull
             else
               echo "Cleaning directory and cloning repo..."
