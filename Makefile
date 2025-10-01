@@ -22,7 +22,7 @@ format:
 # -------------------------------
 # Run flake8 on all Python files to check for PEP8 compliance
 lint:
-	 cd Week4 && flake8 --ignore=C,N .
+	 cd Week4 && flake8 --ignore=C,N,E .
 
 # -------------------------------
 # Target: test

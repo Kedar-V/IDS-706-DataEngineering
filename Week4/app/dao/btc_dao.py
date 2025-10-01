@@ -29,17 +29,17 @@ class BitcoinOHLCDAO:
         cursor = self.conn.cursor()
         cursor.execute(
             f"""
-			CREATE TABLE IF NOT EXISTS {self.table} (
-				id INT AUTO_INCREMENT PRIMARY KEY,
-				timestamp DATETIME NOT NULL,
-				open DECIMAL(18,8) NOT NULL,
-				high DECIMAL(18,8) NOT NULL,
-				low DECIMAL(18,8) NOT NULL,
-				close DECIMAL(18,8) NOT NULL,
-				volume DECIMAL(18,8) NOT NULL,
-				UNIQUE KEY unique_timestamp (timestamp)
-			)
-		"""
+            CREATE TABLE IF NOT EXISTS {self.table} (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                timestamp DATETIME NOT NULL,
+                open DECIMAL(18,8) NOT NULL,
+                high DECIMAL(18,8) NOT NULL,
+                low DECIMAL(18,8) NOT NULL,
+                close DECIMAL(18,8) NOT NULL,
+                volume DECIMAL(18,8) NOT NULL,
+                UNIQUE KEY unique_timestamp (timestamp)
+            )
+        """
         )
         cursor.close()
 
@@ -53,9 +53,9 @@ class BitcoinOHLCDAO:
         cursor = self.conn.cursor()
         cursor.executemany(
             f"""
-			INSERT IGNORE INTO {self.table} (timestamp, open, high, low, close, volume)
-			VALUES (%s, %s, %s, %s, %s, %s)
-			""",
+            INSERT IGNORE INTO {self.table} (timestamp, open, high, low, close, volume)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
             rows,
         )
         self.conn.commit()

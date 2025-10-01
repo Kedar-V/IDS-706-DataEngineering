@@ -5,7 +5,6 @@ import os
 sys.path.append("../../../Week2")
 from Bitcoin_DataAnalysis import (
     DataFrameLoader,
-    CryptoEDA,
     CryptoFeatureEngineer,
     CryptoDatasetLoader,
     RandomForestRegressor,

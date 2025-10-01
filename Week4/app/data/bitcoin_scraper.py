@@ -1,9 +1,4 @@
 import yfinance as yf
-from datetime import datetime
-import sys
-
-sys.path.append("../dao")
-from btc_dao import BitcoinOHLCDAO
 
 
 class BitcoinHistoryFetcher:

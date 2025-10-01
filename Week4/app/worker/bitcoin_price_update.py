@@ -1,5 +1,4 @@
 import sys
-import os
 
 sys.path.append("../data")
 sys.path.append("../dao")

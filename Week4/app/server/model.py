@@ -1,5 +1,4 @@
 import sys
-import os
 
 sys.path.append("../dao")
 from btc_dao import BitcoinOHLCDAO

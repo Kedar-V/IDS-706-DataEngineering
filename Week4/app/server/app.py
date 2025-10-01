@@ -12,7 +12,6 @@ from assistant import NL2SQLAssistant
 from controller import BitcoinOHLCController
 from model import BitcoinOHLCModel
 from Week2.Bitcoin_DataAnalysis import DataFrameLoader
-import os
 from news_dao import NewsDAO
 from predictor import Predictor
 import datetime
