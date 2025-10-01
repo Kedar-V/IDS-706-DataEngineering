@@ -70,6 +70,7 @@ class BitcoinOHLCViewer:
         st.subheader("Enter your query in natural language")
 
         examples = [
+            "--Select--",
             "Show me all rows where close is above 50000",
             "Get the top 5 days with highest volume",
             "Find all rows where open is below 30000",
@@ -77,7 +78,7 @@ class BitcoinOHLCViewer:
             "Show all rows for September 2025",
         ]
 
-        example_prompt = st.selectbox("Or pick an example query:", examples)
+        example_prompt = st.selectbox("Pick an example query from the dropdown:", examples)
         prompt = st.text_area("Or write your own query:", "")
 
         if example_prompt != "--Select--":

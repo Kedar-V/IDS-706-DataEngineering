@@ -44,13 +44,13 @@ This project can also be run using a **Docker container** without relying on VS 
    ```
 2. Build the Docker Image from the project root:
     ```bash
-    docker build -t python_week3 .
+    docker build -t python_week4 .
     ```
     This uses the Dockerfile to create a container with Python 3.12 and dependencies from Week3/requirements.txt.
 
 3. Run the Container
     ```bash
-    docker run -it --name python_week3 -v $(pwd):/app python_week3
+    docker run -it --name python_week4 -v $(pwd):/app python_week4
     ```
 
 - `-v $(pwd):/app` mounts the project folder into the container.  
@@ -58,7 +58,7 @@ This project can also be run using a **Docker container** without relying on VS 
 
 4. To enter the running container, use:  
     ```bash
-    docker exec -it python_week3 /bin/bash
+    docker exec -it python_week4 /bin/bash
     ```
 
 5. Alternative: Using Docker Compose
