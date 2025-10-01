@@ -30,20 +30,10 @@ jobs:
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v0.1.7
         with:
-          host: ${{ secrets.EC2_IP }}
+          ost: ${{ secrets.EC2_IP }}
           username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY_BASE64 }}
-          key_encoding: base64
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Ensure Docker Compose is installed
-            if ! command -v docker-compose &> /dev/null
-            then
-              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-              sudo chmod +x /usr/local/bin/docker-compose
-            fi
-
-            # Deploy application
             cd /home/ubuntu/app
             docker-compose pull
             docker-compose down
-            docker-compose up -d
