@@ -7,18 +7,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 3. Build and push Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
         with:
@@ -26,7 +23,6 @@ jobs:
           push: true
           tags: kedarvaidya05/bitcoin-app:latest
 
-      # 4. Deploy on EC2
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v0.1.7
         with:
@@ -43,7 +39,6 @@ jobs:
                 echo "/home/ec2-user/app already exists, skipping creation."
             fi
 
-      # 5. Copy docker-compose.yml and app code to EC2
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v0.1.7
         with:
@@ -56,14 +51,15 @@ jobs:
             cd /home/ec2-user/app
       
             if [ -d ".git" ]; then
+              echo "Repo exists, pulling latest changes..."
               git reset --hard
+              git clean -fd
               git pull
             else
-              git clone https://github.com/Kedar-V/IDS-706-DataEngineering.git .
+              echo "Cleaning directory and cloning repo..."
+              rm -rf /home/ec2-user/app/*
             fi
 
-
-      # 6. Pull latest image and restart containers on EC2
       - name: Start containers on EC2
         uses: appleboy/ssh-action@v0.1.7
         with:
