@@ -34,6 +34,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /home/ubuntu/app
+            cd /home/ec2-user/app
             docker-compose pull
             docker-compose down
+            docker-compose up -d
