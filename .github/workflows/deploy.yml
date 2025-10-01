@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repo
+      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -26,14 +26,23 @@ jobs:
           push: true
           tags: kedarvaidya05/bitcoin-app:latest
 
-      # 4. SSH into EC2 and deploy with Docker Compose
+      # 4. Deploy on EC2 using base64-encoded PEM
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.EC2_IP }}
           username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY_BASE64 }}
+          key_encoding: base64
           script: |
+            # Ensure Docker Compose is installed
+            if ! command -v docker-compose &> /dev/null
+            then
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
+
+            # Deploy application
             cd /home/ubuntu/app
             docker-compose pull
             docker-compose down
